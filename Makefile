@@ -1,4 +1,4 @@
-.PHONY: help install install-be install-fe start start-be start-fe stop stop-be stop-fe restart restart-be restart-fe test test-be test-fe clean build build-fe migrate migrate-up migrate-down bootstrap-db dev dev-be dev-fe docker-build docker-up docker-down docker-logs docker-bootstrap docker-restart docker-clean
+.PHONY: help install install-be install-fe start start-be start-fe stop stop-be stop-fe restart restart-be restart-fe test test-be test-fe test-e2e test-e2e-ui test-e2e-headed test-e2e-debug test-all install-playwright clean build build-fe migrate migrate-up migrate-down bootstrap-db dev dev-be dev-fe docker-build docker-up docker-down docker-logs docker-bootstrap docker-restart docker-clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -48,9 +48,15 @@ help: ## Show this help message
 	@echo "  make restart      - Restart both servers"
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
-	@echo "  make test         - Run tests for both frontend and backend"
-	@echo "  make test-be      - Run backend tests"
-	@echo "  make test-fe      - Run frontend tests"
+	@echo "  make test         - Run unit tests for both frontend and backend"
+	@echo "  make test-be      - Run backend unit tests"
+	@echo "  make test-fe      - Run frontend unit tests"
+	@echo "  make test-e2e     - Run E2E tests (automatically starts servers)"
+	@echo "  make test-e2e-ui  - Run E2E tests in interactive UI mode"
+	@echo "  make test-e2e-headed - Run E2E tests with visible browser"
+	@echo "  make test-e2e-debug - Debug E2E tests"
+	@echo "  make test-all     - Run all tests (unit + E2E)"
+	@echo "  make install-playwright - Install Playwright browsers"
 	@echo ""
 	@echo "$(GREEN)Database:$(NC)"
 	@echo "  make bootstrap-db - Bootstrap database (create if needed, run migrations)"
@@ -153,7 +159,67 @@ test-fe: ## Run frontend tests
 		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(FE_DIR) && $(NPM) test -- --run
+	@cd $(FE_DIR) && $(NPM) test
+
+# E2E Testing targets
+test-e2e: ## Run E2E tests (Playwright automatically starts servers)
+	@echo "$(CYAN)Running E2E tests...$(NC)"
+	@if [ ! -d "$(FE_DIR)/node_modules" ]; then \
+		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(VENV_DIR)" ]; then \
+		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(FE_DIR) && $(NPM) run test:e2e
+
+test-e2e-ui: ## Run E2E tests in interactive UI mode
+	@echo "$(CYAN)Running E2E tests in UI mode...$(NC)"
+	@if [ ! -d "$(FE_DIR)/node_modules" ]; then \
+		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(VENV_DIR)" ]; then \
+		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(FE_DIR) && $(NPM) run test:e2e:ui
+
+test-e2e-headed: ## Run E2E tests with visible browser
+	@echo "$(CYAN)Running E2E tests with visible browser...$(NC)"
+	@if [ ! -d "$(FE_DIR)/node_modules" ]; then \
+		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(VENV_DIR)" ]; then \
+		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(FE_DIR) && $(NPM) run test:e2e:headed
+
+test-e2e-debug: ## Debug E2E tests
+	@echo "$(CYAN)Debugging E2E tests...$(NC)"
+	@if [ ! -d "$(FE_DIR)/node_modules" ]; then \
+		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(VENV_DIR)" ]; then \
+		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(FE_DIR) && $(NPM) run test:e2e:debug
+
+test-all: test test-e2e ## Run all tests (unit + E2E)
+
+install-playwright: ## Install Playwright browsers
+	@echo "$(CYAN)Installing Playwright browsers...$(NC)"
+	@if [ ! -d "$(FE_DIR)/node_modules" ]; then \
+		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(FE_DIR) && npx playwright install --with-deps chromium
+	@echo "$(GREEN)✓ Playwright browsers installed$(NC)"
 
 # Database bootstrap target
 bootstrap-db: ## Bootstrap database (create if needed, run migrations)
@@ -207,6 +273,9 @@ clean: ## Clean build artifacts and cache
 	@rm -rf $(BE_DIR)/**/__pycache__
 	@find $(BE_DIR) -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
 	@find $(BE_DIR) -type f -name "*.pyc" -delete 2>/dev/null || true
+	@rm -rf $(FE_DIR)/test-results
+	@rm -rf $(FE_DIR)/playwright-report
+	@rm -rf $(FE_DIR)/playwright/.cache
 	@echo "$(GREEN)✓ Clean complete$(NC)"
 
 # Docker targets

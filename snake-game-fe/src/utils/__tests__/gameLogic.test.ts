@@ -91,8 +91,10 @@ describe('gameLogic', () => {
       
       expect(newState.score).toBe(10);
       expect(newState.snake.length).toBe(3);
-      expect(newState.food.x).not.toBe(11);
-      expect(newState.food.y).not.toBe(10);
+      // Food should not be on any snake segment
+      expect(newState.snake.every(segment => 
+        segment.x !== newState.food.x || segment.y !== newState.food.y
+      )).toBe(true);
     });
 
     it('should end game on wall collision in walls mode', () => {
