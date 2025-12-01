@@ -87,8 +87,20 @@ class ApiService {
 
   // Helper to handle errors
   private async handleError(response: Response): Promise<never> {
-    const error = await response.json();
-    const message = error.detail?.error?.message || error.detail || 'Request failed';
+    let message = 'Request failed';
+    try {
+      const error = await response.json();
+      message = error.detail?.error?.message || error.detail?.message || error.detail || message;
+    } catch (e) {
+      // If response is not JSON, try to get text
+      try {
+        const text = await response.text();
+        message = text || message;
+      } catch (textError) {
+        // Fall back to status text
+        message = response.statusText || message;
+      }
+    }
     throw new Error(message);
   }
 

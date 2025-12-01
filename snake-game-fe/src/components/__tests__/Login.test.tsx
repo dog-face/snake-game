@@ -1,9 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { Login } from '../Login';
+
+// Mock fetch globally
+const mockFetch = vi.fn();
+(globalThis as any).fetch = mockFetch;
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
@@ -16,6 +20,16 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 describe('Login', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    mockFetch.mockReset();
+    localStorage.clear();
+  });
+
   it('should render login form', () => {
     renderWithProviders(<Login />);
     
@@ -26,6 +40,20 @@ describe('Login', () => {
   });
 
   it('should show error on invalid login', async () => {
+    // Mock failed login response
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({
+        detail: {
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: 'Invalid username or password'
+          }
+        }
+      }),
+    });
+
     const user = userEvent.setup();
     renderWithProviders(<Login />);
     
