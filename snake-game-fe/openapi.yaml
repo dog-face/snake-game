@@ -1,0 +1,742 @@
+openapi: 3.0.3
+info:
+  title: Snake Game API
+  description: |
+    RESTful API for the Snake Game application. Provides endpoints for user authentication, 
+    leaderboard management, and real-time game state tracking for the watch feature.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@snakegame.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+  - url: https://api.snakegame.com/api/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Leaderboard
+    description: Score submission and leaderboard retrieval
+  - name: Watch
+    description: Active player sessions and game state tracking
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      description: Register a new user with username, email, and password
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            examples:
+              example1:
+                value:
+                  username: player1
+                  email: player1@example.com
+                  password: securePassword123
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Username or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Login with username and password to receive JWT token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              example1:
+                value:
+                  username: player1
+                  password: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate the current session token
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Retrieve information about the authenticated user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /leaderboard:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard entries
+      description: Retrieve leaderboard entries sorted by score (descending)
+      operationId: getLeaderboard
+      parameters:
+        - name: limit
+          in: query
+          description: Number of entries to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Pagination offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: gameMode
+          in: query
+          description: Filter by game mode
+          required: false
+          schema:
+            $ref: '#/components/schemas/GameMode'
+      responses:
+        '200':
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      tags:
+        - Leaderboard
+      summary: Submit a score
+      description: Submit a new score to the leaderboard
+      operationId: submitScore
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreSubmission'
+            examples:
+              example1:
+                value:
+                  score: 150
+                  gameMode: pass-through
+      responses:
+        '201':
+          description: Score submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /watch/active:
+    get:
+      tags:
+        - Watch
+      summary: Get active players
+      description: Retrieve list of currently active game sessions
+      operationId: getActivePlayers
+      responses:
+        '200':
+          description: List of active players
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  players:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivePlayer'
+
+  /watch/active/{playerId}:
+    get:
+      tags:
+        - Watch
+      summary: Get specific active player
+      description: Retrieve game state for a specific active player session
+      operationId: getActivePlayer
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          description: Session/game ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active player information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivePlayer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /watch/start:
+    post:
+      tags:
+        - Watch
+      summary: Start a new game session
+      description: Create a new active game session for tracking
+      operationId: startGameSession
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameMode
+              properties:
+                gameMode:
+                  $ref: '#/components/schemas/GameMode'
+      responses:
+        '201':
+          description: Game session started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    format: uuid
+                  gameMode:
+                    $ref: '#/components/schemas/GameMode'
+                  startedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /watch/update/{sessionId}:
+    put:
+      tags:
+        - Watch
+      summary: Update game state
+      description: Update the game state for an active session
+      operationId: updateGameState
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session/game ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameState
+              properties:
+                gameState:
+                  $ref: '#/components/schemas/GameState'
+      responses:
+        '200':
+          description: Game state updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Game state updated
+                  lastUpdatedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Session doesn't belong to authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /watch/end/{sessionId}:
+    post:
+      tags:
+        - Watch
+      summary: End a game session
+      description: End an active game session and submit final score
+      operationId: endGameSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session/game ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - finalScore
+                - gameMode
+              properties:
+                finalScore:
+                  type: integer
+                  minimum: 0
+                gameMode:
+                  $ref: '#/components/schemas/GameMode'
+      responses:
+        '200':
+          description: Session ended and score submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Session ended
+                  leaderboardEntry:
+                    $ref: '#/components/schemas/LeaderboardEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Unique username (alphanumeric and underscore only)
+          example: player1
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: player1@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Username (3-20 characters, alphanumeric and underscore only)
+          example: player1
+        email:
+          type: string
+          format: email
+          description: Valid email address
+          example: player1@example.com
+        password:
+          type: string
+          minLength: 8
+          description: Password (minimum 8 characters)
+          example: securePassword123
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: player1
+        password:
+          type: string
+          example: securePassword123
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT authentication token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    GameMode:
+      type: string
+      enum:
+        - pass-through
+        - walls
+      description: Game mode type
+
+    Position:
+      type: object
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: integer
+          minimum: 0
+          maximum: 19
+          description: X coordinate (0-19)
+          example: 5
+        y:
+          type: integer
+          minimum: 0
+          maximum: 19
+          description: Y coordinate (0-19)
+          example: 10
+
+    GameState:
+      type: object
+      required:
+        - snake
+        - food
+        - direction
+        - score
+        - gameOver
+      properties:
+        snake:
+          type: array
+          description: Array of snake positions, first element is the head
+          items:
+            $ref: '#/components/schemas/Position'
+          minItems: 1
+          example:
+            - x: 5
+              y: 5
+            - x: 4
+              y: 5
+            - x: 3
+              y: 5
+        food:
+          $ref: '#/components/schemas/Position'
+        direction:
+          type: string
+          enum:
+            - up
+            - down
+            - left
+            - right
+          description: Current snake direction
+          example: right
+        score:
+          type: integer
+          minimum: 0
+          description: Current game score
+          example: 45
+        gameOver:
+          type: boolean
+          description: Whether the game has ended
+          example: false
+
+    LeaderboardEntry:
+      type: object
+      required:
+        - id
+        - username
+        - score
+        - gameMode
+        - date
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique entry identifier
+        username:
+          type: string
+          description: Username of the player
+          example: player1
+        score:
+          type: integer
+          minimum: 0
+          description: Score achieved
+          example: 150
+        gameMode:
+          $ref: '#/components/schemas/GameMode'
+        date:
+          type: string
+          format: date
+          description: Date of the score (YYYY-MM-DD)
+          example: '2024-01-15'
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when score was submitted
+
+    LeaderboardResponse:
+      type: object
+      required:
+        - entries
+        - total
+        - limit
+        - offset
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+        total:
+          type: integer
+          description: Total number of entries matching the query
+          example: 150
+        limit:
+          type: integer
+          description: Number of entries returned
+          example: 10
+        offset:
+          type: integer
+          description: Pagination offset
+          example: 0
+
+    ScoreSubmission:
+      type: object
+      required:
+        - score
+        - gameMode
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          description: Score to submit
+          example: 150
+        gameMode:
+          $ref: '#/components/schemas/GameMode'
+
+    ActivePlayer:
+      type: object
+      required:
+        - id
+        - userId
+        - username
+        - score
+        - gameMode
+        - gameState
+        - startedAt
+        - lastUpdatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Session/game identifier
+        userId:
+          type: string
+          format: uuid
+          description: User identifier
+        username:
+          type: string
+          description: Username of the player
+          example: player1
+        score:
+          type: integer
+          minimum: 0
+          description: Current game score
+          example: 45
+        gameMode:
+          $ref: '#/components/schemas/GameMode'
+        gameState:
+          $ref: '#/components/schemas/GameState'
+        startedAt:
+          type: string
+          format: date-time
+          description: When the game session started
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          description: Last time the game state was updated
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code identifier
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              description: Human-readable error message
+              example: Invalid input data
+            details:
+              type: object
+              description: Additional error details
+              additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid input data
+              details:
+                field: score
+                issue: Score must be a non-negative integer
+
+    Unauthorized:
+      description: Unauthorized - authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Invalid or missing authentication token
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+
