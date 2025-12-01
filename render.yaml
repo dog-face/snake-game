@@ -1,0 +1,51 @@
+# Render Blueprint for Snake Game
+# This file defines all services needed for the application
+
+services:
+  # Backend API Service
+  - type: web
+    name: snake-game-backend
+    env: docker
+    dockerfilePath: ./snake-game-be/Dockerfile.prod
+    dockerContext: ./snake-game-be
+    plan: starter  # Free tier, upgrade to standard for production
+    region: oregon  # Change to your preferred region
+    buildCommand: ""  # Docker handles building
+    startCommand: ""  # Defined in Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: snake-game-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true  # Render will generate a secure key
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440  # 24 hours
+      - key: SESSION_TIMEOUT
+        value: 300  # 5 minutes
+      - key: CORS_ORIGINS
+        value: "https://snake-game-frontend.onrender.com"  # Update with your actual frontend URL
+    healthCheckPath: /health
+
+  # Frontend Web Service
+  - type: web
+    name: snake-game-frontend
+    env: docker
+    dockerfilePath: ./snake-game-fe/Dockerfile.prod
+    dockerContext: ./snake-game-fe
+    plan: starter  # Free tier, upgrade to standard for production
+    region: oregon  # Should match backend region
+    buildCommand: ""  # Docker handles building
+    startCommand: ""  # Defined in Dockerfile
+    envVars:
+      - key: VITE_API_URL
+        value: "https://snake-game-backend.onrender.com/api/v1"  # Update with your actual backend URL
+    healthCheckPath: /health
+
+databases:
+  # PostgreSQL Database
+  - name: snake-game-db
+    plan: starter  # Free tier, upgrade for production
+    databaseName: snake_game
+    user: snake_game_user
+

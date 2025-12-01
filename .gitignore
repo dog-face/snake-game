@@ -36,3 +36,8 @@ lerna-debug.log*
 # Test coverage
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+

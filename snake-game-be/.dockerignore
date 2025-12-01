@@ -1,39 +1,27 @@
-# Python
-__pycache__/
+__pycache__
 *.pyc
 *.pyo
 *.pyd
 .Python
-venv/
-.venv/
-env/
+venv
+env
+ENV
+.venv
+.git
+.gitignore
+*.md
 .env
-
-# Database
+.env.local
 *.db
 *.sqlite
 *.sqlite3
-
-# IDE
-.vscode/
-.idea/
+.coverage
+htmlcov
+.pytest_cache
+.tox
+.DS_Store
+.vscode
+.idea
 *.swp
 *.swo
-
-# Git
-.git/
-.gitignore
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Documentation
-*.md
-!README.md
-
-# OS
-.DS_Store
-Thumbs.db
-
+*~

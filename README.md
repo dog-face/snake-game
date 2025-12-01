@@ -199,11 +199,19 @@ pytest
 
 ### Frontend
 
-Run tests:
+Run unit tests:
 ```bash
 cd snake-game-fe
 npm test
 ```
+
+Run E2E tests (requires both backend and frontend):
+```bash
+cd snake-game-fe
+npm run test:e2e
+```
+
+For more E2E testing options, see [snake-game-fe/e2e/README.md](snake-game-fe/e2e/README.md).
 
 ## Technology Stack
 
@@ -220,8 +228,26 @@ npm test
 - TypeScript
 - Vite
 - React Router
-- Vitest - Testing
-- React Testing Library
+- Vitest - Unit testing
+- React Testing Library - Component testing
+- Playwright - E2E testing
+
+## Deployment
+
+### Render (Recommended)
+
+This project is configured for easy deployment to Render. See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for detailed instructions.
+
+**Quick Start:**
+1. Push this repository to GitHub
+2. Go to https://dashboard.render.com
+3. Click "New +" → "Blueprint"
+4. Connect your repository
+5. Render will auto-detect `render.yaml` and create all services
+6. Configure environment variables (see deployment guide)
+7. Bootstrap the database
+
+For detailed step-by-step instructions, see [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
 
 ## License
 
