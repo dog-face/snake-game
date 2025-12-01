@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiService, ActivePlayer } from '../services/api';
 import { moveSnake } from '../utils/gameLogic';
-import { GameMode } from '../types/game';
 import './Watch.css';
 
 const GRID_SIZE = 20;

@@ -5,7 +5,7 @@ import {
   moveSnake,
   getNextDirection,
 } from '../gameLogic';
-import { GameState, GameMode } from '../../types/game';
+import { GameState } from '../../types/game';
 
 describe('gameLogic', () => {
   describe('createInitialGameState', () => {
@@ -128,17 +128,9 @@ describe('gameLogic', () => {
       // Snake forms a square: head at (10,10), body at (10,9), (11,9), (11,10)
       // Moving left from (10,10) would go to (9,10), which doesn't collide
       // Instead, let's create a case where moving right causes collision
-      const state: GameState = {
-        snake: [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 9, y: 11 }, { x: 10, y: 11 }],
-        food: { x: 15, y: 15 },
-        direction: 'right',
-        score: 0,
-        gameOver: false,
-      };
-      
       // Moving right from (10,10) would go to (11,10), but the body is at (10,11)
       // Actually, let's make it simpler - snake moving into its own body
-      const state2: GameState = {
+      const state: GameState = {
         snake: [{ x: 10, y: 10 }, { x: 11, y: 10 }, { x: 11, y: 9 }, { x: 10, y: 9 }],
         food: { x: 15, y: 15 },
         direction: 'up',
@@ -147,7 +139,7 @@ describe('gameLogic', () => {
       };
       
       // Moving up from (10,10) would go to (10,9), which is in the body
-      const newState = moveSnake(state2, null, 'walls');
+      const newState = moveSnake(state, null, 'walls');
       
       expect(newState.gameOver).toBe(true);
     });
