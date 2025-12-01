@@ -71,8 +71,8 @@ install-be: ## Install backend dependencies
 		cd $(BE_DIR) && $(PYTHON) -m venv venv; \
 	fi
 	@echo "$(YELLOW)Installing Python packages...$(NC)"
-	@$(VENV_BIN)/pip install --upgrade pip
-	@$(VENV_BIN)/pip install -r $(BE_DIR)/requirements.txt
+	@cd $(BE_DIR) && venv/bin/pip install --upgrade pip
+	@cd $(BE_DIR) && venv/bin/pip install -r requirements.txt
 	@echo "$(GREEN)✓ Backend dependencies installed$(NC)"
 
 install-fe: ## Install frontend dependencies
@@ -91,7 +91,7 @@ start-be: ## Start backend server
 		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(BE_DIR) && $(VENV_BIN)/uvicorn app.main:app --reload --host 0.0.0.0 --port $(BE_PORT) &
+	@cd $(BE_DIR) && venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port $(BE_PORT) &
 
 start-fe: ## Start frontend server
 	@echo "$(CYAN)Starting frontend server on port $(FE_PORT)...$(NC)"
@@ -134,7 +134,7 @@ test-be: ## Run backend tests
 		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(BE_DIR) && $(VENV_BIN)/pytest
+	@cd $(BE_DIR) && venv/bin/pytest
 
 test-fe: ## Run frontend tests
 	@echo "$(CYAN)Running frontend tests...$(NC)"
@@ -142,7 +142,7 @@ test-fe: ## Run frontend tests
 		echo "$(RED)Error: Node modules not found. Run 'make install-fe' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(FE_DIR) && $(NPM) test
+	@cd $(FE_DIR) && $(NPM) test -- --run
 
 # Database migration targets
 migrate: migrate-up ## Run database migrations
@@ -153,7 +153,7 @@ migrate-up: ## Upgrade database to head
 		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(BE_DIR) && $(VENV_BIN)/alembic upgrade head
+	@cd $(BE_DIR) && venv/bin/alembic upgrade head
 	@echo "$(GREEN)✓ Database migrations applied$(NC)"
 
 migrate-down: ## Downgrade database by one revision
@@ -162,7 +162,7 @@ migrate-down: ## Downgrade database by one revision
 		echo "$(RED)Error: Virtual environment not found. Run 'make install-be' first.$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(BE_DIR) && $(VENV_BIN)/alembic downgrade -1
+	@cd $(BE_DIR) && venv/bin/alembic downgrade -1
 	@echo "$(GREEN)✓ Database downgraded$(NC)"
 
 # Build targets
