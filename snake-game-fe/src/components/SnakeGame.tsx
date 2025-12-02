@@ -17,12 +17,25 @@ export const SnakeGame: React.FC = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const directionRef = useRef<string | null>(null);
   const gameLoopRef = useRef<number | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const updateWatchRef = useRef<number | null>(null);
+  const gameStateRef = useRef<GameState>(gameState);
 
-  const startGame = () => {
+  const startGame = async () => {
     setGameState(createInitialGameState());
     setIsGameStarted(true);
     setIsPaused(false);
     directionRef.current = null;
+    
+    // Start watch session
+    if (user) {
+      try {
+        const { sessionId } = await apiService.startGameSession(gameMode);
+        sessionIdRef.current = sessionId;
+      } catch (error) {
+        console.error('Failed to start watch session:', error);
+      }
+    }
   };
 
   const pauseGame = () => {
@@ -44,11 +57,20 @@ export const SnakeGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [handleKeyPress]);
 
+  // Keep gameStateRef in sync with gameState
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
   useEffect(() => {
     if (!isGameStarted || isPaused || gameState.gameOver) {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
         gameLoopRef.current = null;
+      }
+      if (updateWatchRef.current) {
+        clearInterval(updateWatchRef.current);
+        updateWatchRef.current = null;
       }
       return;
     }
@@ -60,16 +82,42 @@ export const SnakeGame: React.FC = () => {
       });
     }, GAME_SPEED);
 
+    // Update watch session periodically (every 500ms)
+    if (sessionIdRef.current && user) {
+      updateWatchRef.current = window.setInterval(async () => {
+        if (sessionIdRef.current) {
+          try {
+            await apiService.updateGameState(sessionIdRef.current, gameStateRef.current);
+          } catch (error) {
+            console.error('Failed to update watch session:', error);
+          }
+        }
+      }, 500);
+    }
+
     return () => {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
       }
+      if (updateWatchRef.current) {
+        clearInterval(updateWatchRef.current);
+      }
     };
-  }, [isGameStarted, isPaused, gameState.gameOver, gameMode]);
+  }, [isGameStarted, isPaused, gameState.gameOver, gameMode, user]);
 
   useEffect(() => {
-    if (gameState.gameOver && user && gameState.score > 0) {
-      apiService.submitScore(gameState.score, gameMode).catch(console.error);
+    if (gameState.gameOver && user) {
+      // End watch session
+      if (sessionIdRef.current) {
+        apiService.endGameSession(sessionIdRef.current, gameState.score, gameMode)
+          .catch(console.error);
+        sessionIdRef.current = null;
+      }
+      
+      // Submit to leaderboard
+      if (gameState.score > 0) {
+        apiService.submitScore(gameState.score, gameMode).catch(console.error);
+      }
     }
   }, [gameState.gameOver, gameState.score, gameMode, user]);
 
