@@ -25,9 +25,14 @@ Backend tests pass locally but fail in GitHub Actions CI.
 **Reason:** Ensure venv is active when running pytest by keeping everything in one step
 **Result:** ❌ Failed - Process completed with exit code 1
 
-### Attempt 5: Separate steps with debug info (Current)
+### Attempt 5: Separate steps with debug info (Commit e6684d9)
 **Change:** Separated steps again but added debug output (python version, which python, which pytest, pytest version) and verbose test output
 **Reason:** Get more information about what's actually failing - is it pytest execution or test failures?
+**Result:** ❌ Failed - Found actual error: `TypeError: AsyncClient.__init__() got an unexpected keyword argument 'app'`
+
+### Attempt 6: Fix AsyncClient usage (Current)
+**Change:** Updated `tests/conftest.py` to use `ASGITransport` with `AsyncClient` instead of passing `app` directly
+**Reason:** Newer versions of httpx require using `ASGITransport` for ASGI apps like FastAPI
 **Result:** ⏳ Testing...
 
 ## Next Steps
