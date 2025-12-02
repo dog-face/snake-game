@@ -50,7 +50,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       env: {
-        DATABASE_URL: 'sqlite+aiosqlite:///./test_snake_game.db',
+        DATABASE_URL: 'sqlite:///./test_snake_game.db',
         SECRET_KEY: 'test-secret-key-for-e2e-tests',
         ACCESS_TOKEN_EXPIRE_MINUTES: '1440',
         SESSION_TIMEOUT: '300',

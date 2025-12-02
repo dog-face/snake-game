@@ -17,8 +17,13 @@ Issues identified:
 
 ## Attempts and Changes
 
-### Attempt 1: Fix path and command structure (Current)
-**Change:** Update Playwright config to use absolute paths and better error handling
-**Reason:** The relative path `../snake-game-be` may not work correctly in CI
+### Attempt 1: Fix command structure (Commit 877e12d)
+**Change:** Changed `&&` to `;` in webServer command to allow uvicorn to start even if bootstrap fails
+**Reason:** Thought bootstrap might be failing and preventing uvicorn from starting
+**Result:** ❌ Failed - Still getting "Process from config.webServer was not able to start. Exit code: 1"
+
+### Attempt 2: Fix DATABASE_URL format (Current)
+**Change:** Changed DATABASE_URL from `sqlite+aiosqlite:///./test_snake_game.db` to `sqlite:///./test_snake_game.db`
+**Reason:** The error shows SQLAlchemy is failing to parse the database URL. The `session.py` file converts `sqlite://` to `sqlite+aiosqlite://` automatically, so we should pass the base format.
 **Result:** ⏳ Testing...
 
