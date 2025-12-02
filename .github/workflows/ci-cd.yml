@@ -43,16 +43,7 @@ jobs:
         working-directory: snake-game-be
         run: |
           source venv/bin/activate
-          echo "Python version:"
-          python --version
-          echo "Python path:"
-          which python
-          echo "Pytest path:"
-          which pytest
-          echo "Pytest version:"
-          pytest --version
-          echo "Running tests..."
-          pytest -v --tb=short
+          pytest
 
       - name: Install frontend dependencies
         working-directory: snake-game-fe
