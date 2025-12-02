@@ -15,9 +15,14 @@ Backend tests pass locally but fail in GitHub Actions CI.
 **Reason:** Ensure venv activation and pytest run in same shell session
 **Result:** ❌ Failed - Process completed with exit code 1
 
-### Attempt 3: Direct venv python with debug (Current)
+### Attempt 3: Direct venv python with debug (Commit a63d732)
 **Change:** Using `venv/bin/python -m pytest -v` with debug output to check venv state
 **Reason:** Debug what's happening with venv and get more verbose test output
+**Result:** ❌ Failed - Process completed with exit code 1
+
+### Attempt 4: Combine install and test steps (Current)
+**Change:** Combined install and test into single step so venv activation persists
+**Reason:** Ensure venv is active when running pytest by keeping everything in one step
 **Result:** ⏳ Testing...
 
 ## Next Steps
