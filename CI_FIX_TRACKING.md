@@ -30,10 +30,15 @@ Backend tests pass locally but fail in GitHub Actions CI.
 **Reason:** Get more information about what's actually failing - is it pytest execution or test failures?
 **Result:** ❌ Failed - Found actual error: `TypeError: AsyncClient.__init__() got an unexpected keyword argument 'app'`
 
-### Attempt 6: Fix AsyncClient usage (Current)
+### Attempt 6: Fix AsyncClient usage (Commit ffcbfd1)
 **Change:** Updated `tests/conftest.py` to use `ASGITransport` with `AsyncClient` instead of passing `app` directly
 **Reason:** Newer versions of httpx require using `ASGITransport` for ASGI apps like FastAPI
-**Result:** ⏳ Testing...
+**Result:** ✅ **SUCCESS** - Backend tests now pass! All 63 tests passed.
+
+## Summary
+The root cause was that `AsyncClient` from httpx no longer accepts an `app` parameter directly in newer versions. The fix was to use `ASGITransport(app=app)` when creating the `AsyncClient`.
+
+**Note:** E2E tests are still failing with a different error (`Process from config.webServer was not able to start`), but that's a separate issue from the backend test failures we were fixing.
 
 ## Next Steps
 - Monitor workflow run
