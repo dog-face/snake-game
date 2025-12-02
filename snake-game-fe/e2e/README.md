@@ -104,3 +104,6 @@ CI=true npm run test:e2e
 - The test database is automatically created and migrated
 - If issues persist, delete `../snake-game-be/test_snake_game.db` and rerun tests
 
+
+
+
