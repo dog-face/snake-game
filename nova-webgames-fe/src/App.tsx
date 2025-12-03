@@ -1,28 +1,26 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Navbar } from './components/Navbar';
-import { Login } from './components/Login';
-import { Signup } from './components/Signup';
-import { SnakeGame } from './components/SnakeGame';
-import { Leaderboard } from './components/Leaderboard';
+import { Navbar } from './components/shared/Navbar';
+import { Login } from './components/shared/Login';
+import { Signup } from './components/shared/Signup';
+import { SnakeGame } from './components/games/snake/SnakeGame';
+import { SnakeLeaderboard } from './components/games/snake/SnakeLeaderboard';
 import { Watch } from './components/Watch';
 import './App.css';
+
+import { GAMES } from './data/games';
+import { GameCard } from './components/shared/GameCard';
 
 const Home: React.FC = () => {
   const { user } = useAuth();
   
   return (
     <div className="home-container">
-      <h1>🐍 Welcome to Snake Game!</h1>
+      <h1>🎮 Welcome to Nova WebGames!</h1>
       {user ? (
         <div className="home-content">
-          <p>Welcome back, {user.username}!</p>
-          <div className="home-actions">
-            <Link to="/game" className="home-button">Play Game</Link>
-            <Link to="/leaderboard" className="home-button">View Leaderboard</Link>
-            <Link to="/watch" className="home-button">Watch Players</Link>
-          </div>
+          <p>Welcome back, {user.username}! Choose a game to play:</p>
         </div>
       ) : (
         <div className="home-content">
@@ -33,6 +31,11 @@ const Home: React.FC = () => {
           </div>
         </div>
       )}
+      <div className="games-grid">
+        {GAMES.map((game) => (
+          <GameCard key={game.id} game={game} />
+        ))}
+      </div>
     </div>
   );
 };
@@ -63,6 +66,15 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route
+                path="/games/snake"
+                element={
+                  <ProtectedRoute>
+                    <SnakeGame />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Keep old route for backward compatibility */}
+              <Route
                 path="/game"
                 element={
                   <ProtectedRoute>
@@ -74,7 +86,7 @@ const App: React.FC = () => {
                 path="/leaderboard"
                 element={
                   <ProtectedRoute>
-                    <Leaderboard />
+                    <SnakeLeaderboard />
                   </ProtectedRoute>
                 }
               />

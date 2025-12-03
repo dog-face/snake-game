@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './Navbar.css';
 
 export const Navbar: React.FC = () => {
@@ -16,13 +16,13 @@ export const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar-content">
         <Link to="/" className="navbar-brand">
-          🐍 Snake Game
+          🎮 Nova WebGames
         </Link>
         <div className="navbar-links">
           {user ? (
             <>
               <span className="navbar-username">Welcome, {user.username}!</span>
-              <Link to="/game">Play</Link>
+              <Link to="/games/snake">Play</Link>
               <Link to="/leaderboard">Leaderboard</Link>
               <Link to="/watch">Watch</Link>
               <button onClick={handleLogout} className="logout-button">

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, LeaderboardEntry } from '../services/api';
-import './Leaderboard.css';
+import { apiService, LeaderboardEntry } from '../../../services/api';
+import './SnakeLeaderboard.css';
 
-export const Leaderboard: React.FC = () => {
+export const SnakeLeaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pass-through' | 'walls'>('all');

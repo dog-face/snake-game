@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { apiService } from '../services/api';
-import { createInitialGameState, moveSnake, getNextDirection } from '../utils/gameLogic';
-import { GameState, GameMode } from '../types/game';
+import { useAuth } from '../../../contexts/AuthContext';
+import { apiService } from '../../../services/api';
+import { createInitialGameState, moveSnake, getNextDirection } from '../../../utils/games/snake/gameLogic';
+import { GameState, GameMode } from '../../../types/games/snake';
 import './SnakeGame.css';
 
 const GRID_SIZE = 20;

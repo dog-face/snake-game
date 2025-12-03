@@ -1,4 +1,4 @@
-import { GameState, Position, Direction, GameMode } from '../types/game';
+import { GameState, Position, Direction, GameMode } from '../../../types/games/snake';
 
 const GRID_SIZE = 20;
 

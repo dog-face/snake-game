@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../../contexts/AuthContext';
-import { Signup } from '../Signup';
+import { Signup } from '../shared/Signup';
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(

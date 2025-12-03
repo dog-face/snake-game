@@ -25,7 +25,7 @@ body {
 }
 
 .home-container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 60px auto;
   text-align: center;
   padding: 40px;
@@ -79,5 +79,20 @@ body {
   padding: 40px;
   color: #666;
   font-size: 18px;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+  .games-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 

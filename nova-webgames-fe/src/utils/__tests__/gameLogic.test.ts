@@ -4,8 +4,8 @@ import {
   generateFood,
   moveSnake,
   getNextDirection,
-} from '../gameLogic';
-import { GameState } from '../../types/game';
+} from '../games/snake/gameLogic';
+import { GameState } from '../../types/games/snake';
 
 describe('gameLogic', () => {
   describe('createInitialGameState', () => {
