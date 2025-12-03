@@ -6,6 +6,8 @@ import { Login } from './components/shared/Login';
 import { Signup } from './components/shared/Signup';
 import { SnakeGame } from './components/games/snake/SnakeGame';
 import { SnakeLeaderboard } from './components/games/snake/SnakeLeaderboard';
+import { FPSGame } from './components/games/fps/FPSGame';
+import { FPSLeaderboard } from './components/games/fps/FPSLeaderboard';
 import { Watch } from './components/Watch';
 import './App.css';
 
@@ -95,6 +97,22 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Watch />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/games/fps"
+                element={
+                  <ProtectedRoute>
+                    <FPSGame />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/games/fps/leaderboard"
+                element={
+                  <ProtectedRoute>
+                    <FPSLeaderboard />
                   </ProtectedRoute>
                 }
               />

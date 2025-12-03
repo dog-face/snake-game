@@ -104,6 +104,37 @@ class ApiService {
     throw new Error(message);
   }
 
+  // Generic GET request
+  async get<T = any>(url: string): Promise<{ data: T }> {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      await this.handleError(response);
+    }
+
+    const data = await response.json();
+    return { data };
+  }
+
+  // Generic POST request
+  async post<T = any>(url: string, body?: any): Promise<{ data: T }> {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      await this.handleError(response);
+    }
+
+    const data = await response.json();
+    return { data };
+  }
+
   // Authentication
   async login(credentials: LoginCredentials): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {

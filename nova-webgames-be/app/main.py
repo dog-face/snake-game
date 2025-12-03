@@ -153,11 +153,24 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 from app.api.v1 import auth, leaderboard, watch, websocket
+from app.api.v1.games.fps import leaderboard as fps_leaderboard, websocket as fps_websocket
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(leaderboard.router, prefix="/api/v1/leaderboard", tags=["leaderboard"])
 app.include_router(watch.router, prefix="/api/v1/watch", tags=["watch"])
 app.include_router(websocket.router, tags=["websocket"])
+
+# FPS game routes
+app.include_router(
+    fps_leaderboard.router,
+    prefix="/api/v1/games/fps/leaderboard",
+    tags=["fps", "leaderboard"]
+)
+app.include_router(
+    fps_websocket.router,
+    prefix="/api/v1/games/fps",
+    tags=["fps", "websocket"]
+)
 
 @app.get("/")
 async def root():

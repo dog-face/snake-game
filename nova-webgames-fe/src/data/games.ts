@@ -18,9 +18,9 @@ export const GAMES: Game[] = [
   {
     id: 'fps',
     title: 'FPS Arena',
-    description: '3D first-person shooter arena. Coming soon!',
+    description: '3D first-person shooter arena. Single-player mode available!',
     route: '/games/fps',
-    available: false,
+    available: true,
   },
 ];
 

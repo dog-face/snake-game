@@ -132,7 +132,9 @@ The project uses a Makefile for common operations. Always check `make help` for 
 ### Pre-PR Checklist
 1. **Run all tests**: `make test-all`
 2. **Check TypeScript compilation**: `cd nova-webgames-fe && npm run build`
-3. **Ensure database migrations are up to date**: `make migrate`
+3. **Ensure database migrations are up to date**: 
+   - **In Docker:** `make docker-migrate`
+   - **Local:** `make migrate`
 4. **Verify code works in Docker** (if applicable): `make docker-up && make docker-bootstrap`
 5. **Review your changes** - ensure no debug code, console.logs, or commented code remains
 
