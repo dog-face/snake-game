@@ -6,6 +6,7 @@ import { Login } from './components/shared/Login';
 import { Signup } from './components/shared/Signup';
 import { SnakeGame } from './components/games/snake/SnakeGame';
 import { SnakeLeaderboard } from './components/games/snake/SnakeLeaderboard';
+import { FPSGame } from './components/games/fps/FPSGame';
 import { Watch } from './components/Watch';
 import './App.css';
 
@@ -79,6 +80,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <SnakeGame />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/games/fps"
+                element={
+                  <ProtectedRoute>
+                    <FPSGame />
                   </ProtectedRoute>
                 }
               />
