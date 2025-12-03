@@ -1,6 +1,5 @@
 # Nova WebGames
 
-
 A multi-game browser platform starting with Snake game. Features authentication, leaderboards, and real-time multiplayer.
 
 ## Project Structure
