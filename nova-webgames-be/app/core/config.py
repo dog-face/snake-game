@@ -16,34 +16,33 @@ class Settings(BaseSettings):
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
         """Validate that SECRET_KEY is secure in production."""
-        insecure_defaults = [
+        insecure_defaults = {
             "your-secret-key-here",
             "your-secret-key-here-change-in-production",
             "secret",
             "changeme",
-        ]
+        }
+        
+        # Check if we're in production
+        env_vars = ("ENVIRONMENT", "ENV", "FLASK_ENV")
+        is_production = any(
+            os.getenv(var, "").lower() in ("production", "prod")
+            for var in env_vars
+        )
         
         if v in insecure_defaults:
-            # Check if we're in production (common production indicators)
-            is_production = (
-                os.getenv("ENVIRONMENT", "").lower() in ("production", "prod")
-                or os.getenv("ENV", "").lower() in ("production", "prod")
-                or os.getenv("FLASK_ENV", "").lower() == "production"
-            )
-            
             if is_production:
                 raise ValueError(
                     "SECRET_KEY must be set to a secure value via environment variable in production. "
                     "The default insecure value cannot be used in production."
                 )
-            else:
-                warnings.warn(
-                    f"SECRET_KEY is set to an insecure default value. "
-                    f"Set SECRET_KEY environment variable to a secure random string for production. "
-                    f"Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'",
-                    UserWarning,
-                    stacklevel=2
-                )
+            warnings.warn(
+                f"SECRET_KEY is set to an insecure default value. "
+                f"Set SECRET_KEY environment variable to a secure random string for production. "
+                f"Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'",
+                UserWarning,
+                stacklevel=2
+            )
         
         # Ensure minimum length for security
         if len(v) < 32:
