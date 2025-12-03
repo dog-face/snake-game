@@ -4,11 +4,11 @@ test.describe('Game Flow', () => {
   test('should navigate to game page when authenticated', async ({ authenticatedUser, page }) => {
     await page.goto('/');
 
-    // Click Play Game button
-    await page.click('a:has-text("Play Game")');
+    // Click Play Now button on Snake game card
+    await page.click('a:has-text("Play Now")');
 
-    // Should be on game page
-    await page.waitForURL('/game', { timeout: 10000 });
+    // Should be on game page (either /games/snake or /game for backward compatibility)
+    await page.waitForURL(/\/games\/snake|\/game/, { timeout: 10000 });
     await expect(page.locator('h2:has-text("Snake Game")')).toBeVisible();
   });
 

@@ -17,9 +17,9 @@ test.describe('Full User Flow', () => {
     await page.waitForURL('/', { timeout: 10000 });
     await expect(page.locator(`text=${username}`).first()).toBeVisible();
 
-    // Step 2: Navigate to game
-    await page.click('a:has-text("Play Game")');
-    await page.waitForURL('/game', { timeout: 10000 });
+    // Step 2: Navigate to game (click on Snake game card)
+    await page.click('a:has-text("Play Now")');
+    await page.waitForURL(/\/games\/snake|\/game/, { timeout: 10000 });
 
     // Step 3: Start game
     await page.click('button:has-text("Start Game")');
@@ -51,11 +51,11 @@ test.describe('Full User Flow', () => {
   test('navigation flow: test all main routes', async ({ authenticatedUser, page }) => {
     // Start at home
     await page.goto('/');
-    await expect(page.locator('h1:has-text("Welcome to Snake Game")')).toBeVisible();
+    await expect(page.locator('h1:has-text("Welcome to Nova WebGames!")')).toBeVisible();
 
-    // Navigate to game
-    await page.click('a:has-text("Play Game")');
-    await page.waitForURL('/game', { timeout: 10000 });
+    // Navigate to game (click on Snake game card)
+    await page.click('a:has-text("Play Now")');
+    await page.waitForURL(/\/games\/snake|\/game/, { timeout: 10000 });
     await expect(page.locator('h2:has-text("Snake Game")')).toBeVisible();
 
     // Navigate to leaderboard via navbar
@@ -66,8 +66,8 @@ test.describe('Full User Flow', () => {
     await page.click('nav a:has-text("Watch")');
     await page.waitForURL('/watch', { timeout: 10000 });
 
-    // Navigate back to home via navbar
-    await page.click('nav a:has-text("Snake Game")');
+    // Navigate back to home via navbar brand
+    await page.click('nav a.navbar-brand');
     await page.waitForURL('/', { timeout: 10000 });
   });
 });

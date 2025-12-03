@@ -22,8 +22,8 @@ test.describe('Watch Mode', () => {
   test('should navigate to watch from home', async ({ authenticatedUser, page }) => {
     await page.goto('/');
 
-    // Click Watch Players button
-    await page.click('a:has-text("Watch Players")');
+    // Navigate to watch via navbar
+    await page.click('nav a:has-text("Watch")');
 
     // Should be on watch page
     await page.waitForURL('/watch', { timeout: 10000 });

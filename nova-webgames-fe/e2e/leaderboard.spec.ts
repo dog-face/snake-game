@@ -62,8 +62,8 @@ test.describe('Leaderboard', () => {
   test('should navigate to leaderboard from home', async ({ authenticatedUser, page }) => {
     await page.goto('/');
 
-    // Click View Leaderboard button
-    await page.click('a:has-text("View Leaderboard")');
+    // Navigate to leaderboard via navbar
+    await page.click('nav a:has-text("Leaderboard")');
 
     // Should be on leaderboard page
     await page.waitForURL('/leaderboard', { timeout: 10000 });
