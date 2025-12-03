@@ -10,7 +10,6 @@ from app.api import deps
 from app.core.config import settings
 from app.core import security
 from app.models.user import User
-from app.models.leaderboard import Leaderboard
 from app.models.active_session import ActiveSession
 
 # Use in-memory SQLite for testing
