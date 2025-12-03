@@ -1,4 +1,5 @@
 from app.db.base import Base
 from app.models.user import User
-from app.models.leaderboard import Leaderboard
+from app.models.leaderboard import Leaderboard  # Keep for migration
 from app.models.active_session import ActiveSession
+from app.models.games.snake.leaderboard import SnakeLeaderboard

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from app.api import deps
-from app.models.leaderboard import Leaderboard
+from app.models.games.snake.leaderboard import SnakeLeaderboard
 from app.models.user import User
 from app.schemas.leaderboard import LeaderboardCreate, LeaderboardResponse, LeaderboardEntry, GameMode
 
@@ -23,7 +23,7 @@ async def get_leaderboard(
     game_mode = gameMode
     
     # Build query
-    query = select(Leaderboard)
+    query = select(SnakeLeaderboard)
     if game_mode:
         if game_mode not in ["pass-through", "walls"]:
             raise HTTPException(
@@ -35,18 +35,18 @@ async def get_leaderboard(
                     }
                 }
             )
-        query = query.filter(Leaderboard.game_mode == game_mode)
+        query = query.filter(SnakeLeaderboard.game_mode == game_mode)
     
     # Get total count
-    count_query = select(func.count()).select_from(Leaderboard)
+    count_query = select(func.count()).select_from(SnakeLeaderboard)
     if game_mode:
-        count_query = count_query.filter(Leaderboard.game_mode == game_mode)
+        count_query = count_query.filter(SnakeLeaderboard.game_mode == game_mode)
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()
     
     # Get entries
     entries_result = await db.execute(
-        query.order_by(desc(Leaderboard.score)).offset(offset).limit(limit)
+        query.order_by(desc(SnakeLeaderboard.score)).offset(offset).limit(limit)
     )
     entries = entries_result.scalars().all()
     
@@ -67,7 +67,7 @@ async def submit_score(
     """
     Submit a new score entry.
     """
-    entry = Leaderboard(
+    entry = SnakeLeaderboard(
         user_id=current_user.id,
         username=current_user.username,
         score=score_in.score,

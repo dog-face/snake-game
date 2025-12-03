@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from datetime import date
-from app.models.leaderboard import Leaderboard
+from app.models.games.snake.leaderboard import SnakeLeaderboard
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -24,14 +24,14 @@ class TestGetLeaderboard:
     ):
         """Test getting leaderboard with entries"""
         # Create some leaderboard entries
-        entry1 = Leaderboard(
+        entry1 = SnakeLeaderboard(
             user_id=test_user.id,
             username=test_user.username,
             score=100,
             game_mode="pass-through",
             date=date.today(),
         )
-        entry2 = Leaderboard(
+        entry2 = SnakeLeaderboard(
             user_id=test_user.id,
             username=test_user.username,
             score=200,
@@ -57,7 +57,7 @@ class TestGetLeaderboard:
         """Test getting leaderboard with limit"""
         # Create multiple entries
         for i in range(15):
-            entry = Leaderboard(
+            entry = SnakeLeaderboard(
                 user_id=test_user.id,
                 username=test_user.username,
                 score=100 + i,
@@ -79,7 +79,7 @@ class TestGetLeaderboard:
         """Test getting leaderboard with offset"""
         # Create multiple entries
         for i in range(10):
-            entry = Leaderboard(
+            entry = SnakeLeaderboard(
                 user_id=test_user.id,
                 username=test_user.username,
                 score=100 + i,
@@ -99,14 +99,14 @@ class TestGetLeaderboard:
         self, client: AsyncClient, test_db: AsyncSession, test_user: User
     ):
         """Test filtering leaderboard by game mode"""
-        entry1 = Leaderboard(
+        entry1 = SnakeLeaderboard(
             user_id=test_user.id,
             username=test_user.username,
             score=100,
             game_mode="pass-through",
             date=date.today(),
         )
-        entry2 = Leaderboard(
+        entry2 = SnakeLeaderboard(
             user_id=test_user.id,
             username=test_user.username,
             score=200,

@@ -7,7 +7,7 @@ from app.api import deps
 from app.core.config import settings
 from app.models.active_session import ActiveSession
 from app.models.user import User
-from app.models.leaderboard import Leaderboard
+from app.models.games.snake.leaderboard import SnakeLeaderboard
 from app.schemas.watch import (
     ActivePlayersResponse,
     ActivePlayer,
@@ -264,7 +264,7 @@ async def end_game_session(
     
     # Create leaderboard entry
     from datetime import date
-    leaderboard_entry = Leaderboard(
+    leaderboard_entry = SnakeLeaderboard(
         user_id=current_user.id,
         username=current_user.username,
         score=request.finalScore,
