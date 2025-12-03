@@ -53,7 +53,7 @@ export default defineConfig({
       stderr: 'pipe',
       env: {
         DATABASE_URL: 'sqlite:///./test_snake_game.db',
-        SECRET_KEY: 'test-secret-key-for-e2e-tests',
+        SECRET_KEY: 'test-secret-key-for-e2e-tests-must-be-32-chars-min',
         ACCESS_TOKEN_EXPIRE_MINUTES: '1440',
         SESSION_TIMEOUT: '300',
       },

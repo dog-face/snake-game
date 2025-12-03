@@ -138,7 +138,11 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     }
     # In development, include traceback
-    if settings.SECRET_KEY == "your-secret-key-here-change-in-production":
+    insecure_defaults = [
+        "your-secret-key-here",
+        "your-secret-key-here-change-in-production",
+    ]
+    if settings.SECRET_KEY in insecure_defaults:
         error_detail["error"]["traceback"] = traceback.format_exc()
     
     return JSONResponse(
