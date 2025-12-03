@@ -5,7 +5,7 @@ import {
   moveSnake,
   getNextDirection,
 } from '../games/snake/gameLogic';
-import { GameState } from '../../types/games/snake';
+import { GameState } from '@/types/games/snake';
 
 describe('gameLogic', () => {
   describe('createInitialGameState', () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { apiService, ActivePlayer } from '../services/api';
-import { moveSnake } from '../utils/games/snake/gameLogic';
+import { apiService, ActivePlayer } from '@/services/api';
+import { moveSnake } from '@/utils/games/snake/gameLogic';
 import './Watch.css';
 
 const GRID_SIZE = 20;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, LeaderboardEntry } from '../../../services/api';
+import { apiService, LeaderboardEntry } from '@/services/api';
 import './SnakeLeaderboard.css';
 
 export const SnakeLeaderboard: React.FC = () => {

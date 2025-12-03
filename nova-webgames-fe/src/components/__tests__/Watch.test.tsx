@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { Watch } from '../Watch';
-import { apiService, ActivePlayer } from '../../services/api';
+import { apiService, ActivePlayer } from '@/services/api';
 
 // Mock the API service
-vi.mock('../../services/api', () => ({
+vi.mock('@/services/api', () => ({
   apiService: {
     getActivePlayers: vi.fn(),
   },
 }));
 
 // Mock the game logic
-vi.mock('../../utils/games/snake/gameLogic', () => ({
+vi.mock('@/utils/games/snake/gameLogic', () => ({
   moveSnake: vi.fn((state) => ({
     ...state,
     score: state.score + 1,
