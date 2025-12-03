@@ -3,10 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { SnakeGame } from '../SnakeGame';
-import { AuthProvider } from '../../../../contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Mock the API service
-vi.mock('../../../../services/api', () => ({
+vi.mock('@/services/api', () => ({
   apiService: {
     startGameSession: vi.fn(),
     updateGameState: vi.fn(),
@@ -19,8 +19,8 @@ vi.mock('../../../../services/api', () => ({
 }));
 
 // Mock the game logic to make tests more predictable
-vi.mock('../../../../utils/games/snake/gameLogic', async () => {
-  const actual = await vi.importActual('../../../../utils/games/snake/gameLogic');
+vi.mock('@/utils/games/snake/gameLogic', async () => {
+  const actual = await vi.importActual('@/utils/games/snake/gameLogic');
   return {
     ...actual,
     createInitialGameState: vi.fn(() => ({
@@ -34,8 +34,8 @@ vi.mock('../../../../utils/games/snake/gameLogic', async () => {
 });
 
 // Import after mocks are set up
-import { apiService } from '../../../../services/api';
-import { User } from '../../../../services/api';
+import { apiService } from '@/services/api';
+import { User } from '@/services/api';
 
 const mockUser: User = {
   id: '1',
