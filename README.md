@@ -9,6 +9,50 @@ This repository contains both the frontend and backend:
 - **`nova-webgames-be/`** - FastAPI backend (Python)
 - **`nova-webgames-fe/`** - React frontend (TypeScript)
 
+### Multi-Game Architecture
+
+The platform uses a modular structure to support multiple games:
+
+**Backend Structure:**
+```
+nova-webgames-be/
+├── app/
+│   ├── models/games/        # Game-specific models
+│   │   ├── snake/           # Snake game models
+│   │   └── fps/             # FPS game models (placeholder)
+│   ├── api/v1/games/        # Game-specific API routes
+│   │   ├── snake/           # Snake game endpoints
+│   │   └── fps/             # FPS game endpoints (placeholder)
+│   └── schemas/games/       # Game-specific schemas
+│       ├── snake/           # Snake game schemas
+│       └── fps/             # FPS game schemas (placeholder)
+```
+
+**Frontend Structure:**
+```
+nova-webgames-fe/
+├── src/
+│   ├── components/games/     # Game-specific components
+│   │   ├── snake/           # Snake game components
+│   │   └── fps/             # FPS game components (placeholder)
+│   ├── services/games/      # Game-specific API services
+│   │   ├── snake/           # Snake game API calls
+│   │   └── fps/             # FPS game API calls (placeholder)
+│   ├── types/games/         # Game-specific TypeScript types
+│   │   ├── snake.ts         # Snake game types
+│   │   └── fps.ts           # FPS game types (placeholder)
+│   └── data/games.ts        # Game metadata registry
+```
+
+Each game has its own:
+- Database models and leaderboard table
+- API endpoints (under `/api/v1/games/{game-id}/`)
+- Frontend components
+- Type definitions
+- API service layer
+
+See [GAMES.md](GAMES.md) for detailed instructions on adding a new game.
+
 ## Quick Start
 
 ### Backend Setup
@@ -41,7 +85,7 @@ SESSION_TIMEOUT=300
 
 **For SQLite (development/testing):**
 ```env
-DATABASE_URL=sqlite:///./snake_game.db
+DATABASE_URL=sqlite:///./nova_webgames.db
 SECRET_KEY=your-secret-key-here-change-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 SESSION_TIMEOUT=300
@@ -156,7 +200,7 @@ Create a `.env` file in the project root (optional, defaults are provided):
 # PostgreSQL Configuration
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=snake_game
+POSTGRES_DB=nova_webgames
 
 # Backend Configuration
 SECRET_KEY=your-secret-key-here-change-in-production
@@ -179,12 +223,28 @@ This will remove all containers, volumes, and images.
 
 ## Features
 
-- 🎮 **Two Game Modes**: Pass-through (wraps around) and Walls (ends on collision)
+- 🎮 **Multi-Game Platform**: Modular architecture supporting multiple games
+  - **Snake Game**: Classic snake game with two modes (Pass-through and Walls)
+  - **FPS Arena**: Coming soon! (placeholder structure ready)
 - 👤 **Authentication**: User signup, login, and session management
-- 🏆 **Leaderboard**: View and submit top scores
+- 🏆 **Game-Specific Leaderboards**: Separate leaderboard tables per game
 - 👀 **Watch Mode**: Real-time viewing of active players
 - 🔌 **WebSocket Support**: Real-time game state updates
-- ✅ **Fully Tested**: Comprehensive test coverage for both frontend and backend
+- ✅ **Fully Tested**: Comprehensive test coverage (200+ backend tests, 50+ frontend tests, 31 E2E tests)
+
+## Adding a New Game
+
+Nova WebGames is designed as a multi-game platform. To add a new game:
+
+1. **See [GAMES.md](GAMES.md)** for detailed instructions
+2. **Quick overview:**
+   - Create game directories in backend (`app/models/games/{game-id}/`, `app/api/v1/games/{game-id}/`, `app/schemas/games/{game-id}/`)
+   - Create game directories in frontend (`src/components/games/{game-id}/`, `src/services/games/{game-id}/`, `src/types/games/{game-id}.ts`)
+   - Add game to `src/data/games.ts`
+   - Create game-specific leaderboard table (if needed)
+   - Add route in `App.tsx`
+
+For complete instructions, see [GAMES.md](GAMES.md).
 
 ## Development
 

@@ -1,6 +1,6 @@
-# Snake Game Backend API
+# Nova WebGames Backend API
 
-FastAPI backend for the Snake Game application with authentication, leaderboard, and real-time game state tracking.
+FastAPI backend for the Nova WebGames multi-game platform. Features authentication, game-specific leaderboards, and real-time game state tracking.
 
 ## Quick Start
 
@@ -125,7 +125,7 @@ Create a `.env` file in the project root:
 DATABASE_URL=postgresql://user:password@localhost:5432/snake_game
 
 # Or SQLite (for development/testing)
-# DATABASE_URL=sqlite:///./snake_game.db
+# DATABASE_URL=sqlite:///./nova_webgames.db
 
 SECRET_KEY=your-secret-key-here-change-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
@@ -154,13 +154,13 @@ SESSION_TIMEOUT=300
 3. **Update your `.env` file** with the connection string:
    ```env
    # macOS with Homebrew: use your macOS username (not 'postgres')
-   DATABASE_URL=postgresql://your_username@localhost:5432/snake_game
+   DATABASE_URL=postgresql://your_username@localhost:5432/nova_webgames
    
    # Linux: typically uses 'postgres' user
-   DATABASE_URL=postgresql://postgres@localhost:5432/snake_game
+   DATABASE_URL=postgresql://postgres@localhost:5432/nova_webgames
    
    # Or with a custom user and password
-   DATABASE_URL=postgresql://snake_user:your_password@localhost:5432/snake_game
+   DATABASE_URL=postgresql://nova_user:your_password@localhost:5432/nova_webgames
    ```
    
    **Note**: 
@@ -181,7 +181,7 @@ SESSION_TIMEOUT=300
    Or manually:
    ```bash
    # Create database manually (optional - bootstrap script does this)
-   createdb snake_game
+   createdb nova_webgames
    
    # Run migrations
    alembic upgrade head
@@ -207,8 +207,8 @@ SESSION_TIMEOUT=300
 - For development, you can use the default `postgres` superuser
 - Or create a user with proper permissions:
   ```sql
-  CREATE USER snake_user WITH PASSWORD 'your_password';
-  ALTER USER snake_user CREATEDB;
+  CREATE USER nova_user WITH PASSWORD 'your_password';
+  ALTER USER nova_user CREATEDB;
   ```
 
 ## API Endpoints
@@ -219,9 +219,13 @@ SESSION_TIMEOUT=300
 - `POST /api/v1/auth/logout` - Logout user
 - `GET /api/v1/auth/me` - Get current user
 
-### Leaderboard
-- `GET /api/v1/leaderboard` - Get leaderboard entries
-- `POST /api/v1/leaderboard` - Submit score
+### Leaderboard (Snake Game)
+- `GET /api/v1/leaderboard` - Get snake leaderboard entries (backward compatibility)
+- `POST /api/v1/leaderboard` - Submit snake score (backward compatibility)
+- `GET /api/v1/games/snake/leaderboard` - Get snake leaderboard entries (game-specific route)
+- `POST /api/v1/games/snake/leaderboard` - Submit snake score (game-specific route)
+
+**Note:** Each game has its own leaderboard table and endpoints. The old `/api/v1/leaderboard` routes are maintained for backward compatibility but use the snake-specific leaderboard.
 
 ### Watch (Active Players)
 - `GET /api/v1/watch/active` - Get active players
@@ -236,18 +240,38 @@ SESSION_TIMEOUT=300
 ## Project Structure
 
 ```
-snake-game-be/
+nova-webgames-be/
 ├── app/
 │   ├── api/v1/          # API route handlers
+│   │   ├── games/       # Game-specific routes
+│   │   │   ├── snake/   # Snake game endpoints
+│   │   │   └── fps/     # FPS game endpoints (placeholder)
+│   │   ├── auth/        # Authentication endpoints
+│   │   └── watch/       # Watch mode endpoints
 │   ├── core/            # Configuration and security
 │   ├── db/              # Database session and models
 │   ├── models/          # SQLAlchemy models
+│   │   ├── games/       # Game-specific models
+│   │   │   ├── snake/   # Snake game models (leaderboard)
+│   │   │   └── fps/     # FPS game models (placeholder)
+│   │   ├── user.py      # User model
+│   │   └── active_session.py  # Active session model
 │   ├── schemas/         # Pydantic schemas
+│   │   ├── games/       # Game-specific schemas
+│   │   │   ├── snake/   # Snake game schemas
+│   │   │   └── fps/     # FPS game schemas (placeholder)
+│   │   └── user.py      # User schemas
 │   └── main.py          # FastAPI application
-├── tests/               # Test suite
+├── tests/               # Test suite (200+ tests)
 ├── alembic/             # Database migrations
 └── requirements.txt     # Python dependencies
 ```
+
+**Multi-Game Architecture:**
+- Each game has its own directory under `app/models/games/`, `app/api/v1/games/`, and `app/schemas/games/`
+- Each game has its own leaderboard table (e.g., `snake_leaderboard`, `chess_leaderboard`)
+- Game-specific endpoints are under `/api/v1/games/{game-id}/`
+- See [GAMES.md](../GAMES.md) for instructions on adding a new game
 
 ## Technology Stack
 

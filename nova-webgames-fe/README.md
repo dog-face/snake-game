@@ -1,6 +1,6 @@
-# Snake Game Frontend
+# Nova WebGames Frontend
 
-A modern, interactive Snake game frontend built with React, TypeScript, and Vite. Features two game modes, multiplayer leaderboard, and the ability to watch other players in real-time.
+A modern, multi-game platform frontend built with React, TypeScript, and Vite. Currently features Snake game with two game modes, multiplayer leaderboard, and the ability to watch other players in real-time.
 
 ## Features
 
@@ -34,7 +34,7 @@ A modern, interactive Snake game frontend built with React, TypeScript, and Vite
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Backend server running (see [snake-game-be](https://github.com/dog-face/snake-game-be))
+- Backend server running (see [nova-webgames-be](../nova-webgames-be/README.md))
 
 ### Installation
 
@@ -97,37 +97,59 @@ npm run preview
 ```
 src/
 ├── components/          # React components
-│   ├── Login.tsx       # Login form
-│   ├── Signup.tsx      # Signup form
-│   ├── SnakeGame.tsx   # Main game component
-│   ├── Leaderboard.tsx # Leaderboard display
-│   ├── Watch.tsx       # Watch other players
-│   └── Navbar.tsx      # Navigation bar
+│   ├── shared/         # Shared components
+│   │   ├── Login.tsx   # Login form
+│   │   ├── Signup.tsx  # Signup form
+│   │   └── Navbar.tsx  # Navigation bar
+│   └── games/          # Game-specific components
+│       ├── snake/      # Snake game components
+│       │   ├── SnakeGame.tsx
+│       │   └── SnakeLeaderboard.tsx
+│       └── fps/        # FPS game components (placeholder)
+│           └── FPSGame.tsx
 ├── contexts/           # React contexts
 │   └── AuthContext.tsx # Authentication context
 ├── services/           # API services
-│   └── api.ts          # Centralized API (mocked)
+│   ├── api.ts          # Shared API client
+│   └── games/          # Game-specific API services
+│       ├── snake/      # Snake game API calls
+│       └── fps/        # FPS game API calls (placeholder)
 ├── utils/              # Utility functions
-│   └── gameLogic.ts    # Game logic functions
+│   └── games/          # Game-specific utilities
+│       └── snake/      # Snake game logic
 ├── types/              # TypeScript types
-│   └── game.ts         # Game-related types
+│   └── games/          # Game-specific types
+│       ├── snake.ts    # Snake game types
+│       └── fps.ts      # FPS game types (placeholder)
+├── data/               # Game metadata
+│   └── games.ts        # Game registry
 └── test/               # Test setup
     └── setup.ts        # Vitest configuration
 ```
 
+**Multi-Game Architecture:**
+- Each game has its own directory under `components/games/`, `services/games/`, and `types/games/`
+- Shared components (Login, Signup, Navbar) are in `components/shared/`
+- Game metadata is registered in `data/games.ts`
+- See [GAMES.md](../GAMES.md) for instructions on adding a new game
+
 ## API Service
 
-All backend calls are centralized in `src/services/api.ts` and connected to the real backend API. The service handles:
+Backend calls are organized by game:
+- **Shared API**: `src/services/api.ts` - Handles authentication, JWT token management, and shared operations
+- **Game-Specific API**: `src/services/games/{game-id}/api.ts` - Handles game-specific endpoints (e.g., leaderboard)
+
+The service handles:
 - JWT token management (stored in localStorage)
 - Authentication (login, signup, logout)
-- Leaderboard operations
+- Game-specific leaderboard operations
 - Active player tracking for watch feature
 
 ### Backend Integration
 
-The frontend is integrated with the backend API. Make sure the backend server is running at `http://localhost:8000` (or update the `REACT_APP_API_URL` environment variable).
+The frontend is integrated with the backend API. Make sure the backend server is running at `http://localhost:8000` (or update the `VITE_API_URL` environment variable).
 
-See the [Backend Repository](https://github.com/dog-face/snake-game-be) for backend setup instructions.
+See the [Backend README](../nova-webgames-be/README.md) for backend setup instructions.
 
 ## Game Controls
 

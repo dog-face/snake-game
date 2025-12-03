@@ -38,12 +38,29 @@ The project uses a Makefile for common operations. Always check `make help` for 
 - Environment variables are configured in `.env` files (see README.md for details)
 
 ### Navigating the Codebase
-- Backend API routes: `nova-webgames-be/app/api/v1/`
-- Backend models: `nova-webgames-be/app/models/`
-- Backend schemas: `nova-webgames-be/app/schemas/`
-- Frontend components: `nova-webgames-fe/src/components/`
-- Frontend services: `nova-webgames-fe/src/services/`
-- Frontend tests: `nova-webgames-fe/src/**/__tests__/` and `nova-webgames-fe/e2e/`
+
+**Backend:**
+- API routes: `nova-webgames-be/app/api/v1/`
+  - Game-specific routes: `nova-webgames-be/app/api/v1/games/{game-id}/`
+  - Shared routes: `nova-webgames-be/app/api/v1/auth/`, `nova-webgames-be/app/api/v1/watch/`
+- Models: `nova-webgames-be/app/models/`
+  - Game-specific models: `nova-webgames-be/app/models/games/{game-id}/`
+  - Shared models: `nova-webgames-be/app/models/user.py`, `nova-webgames-be/app/models/active_session.py`
+- Schemas: `nova-webgames-be/app/schemas/`
+  - Game-specific schemas: `nova-webgames-be/app/schemas/games/{game-id}/`
+- Tests: `nova-webgames-be/tests/`
+
+**Frontend:**
+- Components: `nova-webgames-fe/src/components/`
+  - Game-specific: `nova-webgames-fe/src/components/games/{game-id}/`
+  - Shared: `nova-webgames-fe/src/components/shared/`
+- Services: `nova-webgames-fe/src/services/`
+  - Game-specific: `nova-webgames-fe/src/services/games/{game-id}/`
+  - Shared: `nova-webgames-fe/src/services/api.ts`
+- Types: `nova-webgames-fe/src/types/`
+  - Game-specific: `nova-webgames-fe/src/types/games/{game-id}.ts`
+- Game registry: `nova-webgames-fe/src/data/games.ts`
+- Tests: `nova-webgames-fe/src/**/__tests__/` and `nova-webgames-fe/e2e/`
 
 ## Testing Instructions
 
@@ -131,7 +148,25 @@ The project uses a Makefile for common operations. Always check `make help` for 
 
 ## Common Tasks
 
+### Adding a New Game
+See [GAMES.md](GAMES.md) for complete instructions. Quick overview:
+1. Create game directories in backend (`app/models/games/{game-id}/`, `app/api/v1/games/{game-id}/`, `app/schemas/games/{game-id}/`)
+2. Create game directories in frontend (`src/components/games/{game-id}/`, `src/services/games/{game-id}/`, `src/types/games/{game-id}.ts`)
+3. Add game to `src/data/games.ts`
+4. Create game-specific leaderboard table (if needed)
+5. Add route in `App.tsx`
+
 ### Adding a New API Endpoint
+**For game-specific endpoints:**
+1. Add route handler in `nova-webgames-be/app/api/v1/games/{game-id}/`
+2. Add Pydantic schema in `nova-webgames-be/app/schemas/games/{game-id}/`
+3. Add database model if needed in `nova-webgames-be/app/models/games/{game-id}/`
+4. Register route in `app/main.py` with prefix `/api/v1/games/{game-id}/`
+5. Create migration if model changed: `alembic revision --autogenerate -m "add new model"`
+6. Add tests in `nova-webgames-be/tests/`
+7. Update OpenAPI spec (auto-generated, but verify)
+
+**For shared endpoints:**
 1. Add route handler in `nova-webgames-be/app/api/v1/`
 2. Add Pydantic schema in `nova-webgames-be/app/schemas/`
 3. Add database model if needed in `nova-webgames-be/app/models/`
@@ -140,7 +175,14 @@ The project uses a Makefile for common operations. Always check `make help` for 
 6. Update OpenAPI spec (auto-generated, but verify)
 
 ### Adding a New Frontend Component
-1. Create component in `nova-webgames-fe/src/components/`
+**For game-specific components:**
+1. Create component in `nova-webgames-fe/src/components/games/{game-id}/`
+2. Add CSS file if needed (same directory)
+3. Add tests in `__tests__/` subdirectory
+4. Update routing in `nova-webgames-fe/src/App.tsx` if needed
+
+**For shared components:**
+1. Create component in `nova-webgames-fe/src/components/shared/`
 2. Add CSS file if needed (same directory)
 3. Add tests in `__tests__/` subdirectory
 4. Update routing in `nova-webgames-fe/src/App.tsx` if needed

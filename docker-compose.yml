@@ -24,7 +24,7 @@ services:
     volumes:
       - ./nova-webgames-be:/app
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-snake_game}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-nova_webgames}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       SESSION_TIMEOUT: ${SESSION_TIMEOUT:-300}
