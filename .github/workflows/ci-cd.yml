@@ -34,6 +34,8 @@ jobs:
 
       - name: Run backend tests
         working-directory: nova-webgames-be
+        env:
+          SECRET_KEY: 'test-secret-key-for-backend-tests-must-be-32-chars-min'
         run: |
           source venv/bin/activate
           pytest
