@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Navbar } from './components/shared/Navbar';
-import { Login } from './components/shared/Login';
-import { Signup } from './components/shared/Signup';
-import { SnakeGame } from './components/games/snake/SnakeGame';
-import { SnakeLeaderboard } from './components/games/snake/SnakeLeaderboard';
-import { Watch } from './components/Watch';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { Navbar } from '@/components/shared/Navbar';
+import { Login } from '@/components/shared/Login';
+import { Signup } from '@/components/shared/Signup';
+import { SnakeGame } from '@/components/games/snake/SnakeGame';
+import { SnakeLeaderboard } from '@/components/games/snake/SnakeLeaderboard';
+import { Watch } from '@/components/Watch';
 import './App.css';
 
-import { GAMES } from './data/games';
-import { GameCard } from './components/shared/GameCard';
+import { GAMES } from '@/data/games';
+import { GameCard } from '@/components/shared/GameCard';
 
 const Home: React.FC = () => {
   const { user } = useAuth();

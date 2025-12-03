@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Game } from '../../data/games';
+import { Game } from '@/data/games';
 import './GameCard.css';
 
 interface GameCardProps {

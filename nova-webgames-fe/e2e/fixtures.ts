@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { apiService } from '../src/services/api';
+import { apiService } from '@/services/api';
 
 /**
  * Custom fixtures for E2E tests
