@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SnakeLeaderboard } from '../SnakeLeaderboard';
-import { apiService, LeaderboardEntry } from '../../../../services/api';
+import { LeaderboardEntry } from '../../../../services/api';
 
 // Mock the API service
 vi.mock('../../../../services/api', () => ({
