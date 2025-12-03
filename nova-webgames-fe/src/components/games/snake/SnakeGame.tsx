@@ -107,16 +107,11 @@ export const SnakeGame: React.FC = () => {
 
   useEffect(() => {
     if (gameState.gameOver && user) {
-      // End watch session
+      // End watch session (this also creates the leaderboard entry)
       if (sessionIdRef.current) {
         apiService.endGameSession(sessionIdRef.current, gameState.score, gameMode)
           .catch(console.error);
         sessionIdRef.current = null;
-      }
-      
-      // Submit to leaderboard
-      if (gameState.score > 0) {
-        apiService.submitScore(gameState.score, gameMode).catch(console.error);
       }
     }
   }, [gameState.gameOver, gameState.score, gameMode, user]);

@@ -1,10 +1,11 @@
 import pytest
 from httpx import AsyncClient
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.models.active_session import ActiveSession
 from app.models.user import User
+from app.models.games.snake.leaderboard import SnakeLeaderboard
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 class TestGetActivePlayers:
     """Test get active players endpoint"""
@@ -279,6 +280,71 @@ class TestEndGame:
             }
         )
         assert response.status_code == 403
+    
+    async def test_end_game_creates_single_leaderboard_entry(
+        self, authenticated_client: AsyncClient, test_db: AsyncSession, test_user: User
+    ):
+        """Test that ending a game session creates exactly one leaderboard entry"""
+        # Get initial leaderboard count
+        initial_count_result = await test_db.execute(
+            select(func.count()).select_from(SnakeLeaderboard).filter(
+                SnakeLeaderboard.user_id == test_user.id
+            )
+        )
+        initial_count = initial_count_result.scalar_one()
+        
+        # Create a session first
+        session = ActiveSession(
+            user_id=test_user.id,
+            username=test_user.username,
+            game_mode="pass-through",
+            game_state={
+                "snake": [{"x": 10, "y": 10}],
+                "food": {"x": 15, "y": 15},
+                "direction": "right",
+                "score": 200,
+                "gameOver": True,
+            },
+            score=200,
+        )
+        test_db.add(session)
+        await test_db.commit()
+        await test_db.refresh(session)
+        
+        # End the game session
+        response = await authenticated_client.post(
+            f"/api/v1/watch/end/{session.id}",
+            json={
+                "finalScore": 200,
+                "gameMode": "pass-through"
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Session ended"
+        assert "leaderboardEntry" in data
+        assert data["leaderboardEntry"]["score"] == 200
+        
+        # Verify exactly one new leaderboard entry was created
+        final_count_result = await test_db.execute(
+            select(func.count()).select_from(SnakeLeaderboard).filter(
+                SnakeLeaderboard.user_id == test_user.id
+            )
+        )
+        final_count = final_count_result.scalar_one()
+        assert final_count == initial_count + 1, f"Expected {initial_count + 1} entries, got {final_count}"
+        
+        # Verify the entry details
+        entry_result = await test_db.execute(
+            select(SnakeLeaderboard).filter(
+                SnakeLeaderboard.user_id == test_user.id,
+                SnakeLeaderboard.score == 200
+            ).order_by(SnakeLeaderboard.created_at.desc())
+        )
+        entry = entry_result.scalar_one()
+        assert entry.username == test_user.username
+        assert entry.game_mode == "pass-through"
+        assert entry.score == 200
 
 class TestGetActivePlayer:
     """Test get specific active player endpoint"""
