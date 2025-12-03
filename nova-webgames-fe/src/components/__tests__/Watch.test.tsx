@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { Watch } from '../Watch';
 import { apiService, ActivePlayer } from '../../services/api';
 
@@ -18,9 +17,6 @@ vi.mock('../../utils/games/snake/gameLogic', () => ({
     score: state.score + 1,
   })),
 }));
-
-// Import after mocks are set up
-import { apiService } from '../../services/api';
 
 const mockActivePlayers: ActivePlayer[] = [
   {
