@@ -8,6 +8,7 @@ import { fpsApi } from '../../../services/games/fps/api';
 import { GameLoop } from '../../../utils/games/fps/gameLoop';
 import { InputManager } from '../../../utils/games/fps/inputManager';
 import { CameraController } from '../../../utils/games/fps/cameraController';
+import { AudioManager, SOUNDS } from '../../../utils/games/fps/audioManager';
 import { GAME_CONFIG } from '../../../utils/games/fps/constants';
 import type { FPSGameState } from '../../../types/games/fps';
 import './FPSGame.css';
@@ -266,6 +267,7 @@ export const FPSGame: React.FC = () => {
   const gameLoopRef = useRef<GameLoop | null>(null);
   const inputManagerRef = useRef<InputManager | null>(null);
   const cameraControllerRef = useRef<CameraController | null>(null);
+  const audioManagerRef = useRef<AudioManager | null>(null);
   
   const [gameState, setGameState] = useState<FPSGameState>({
     player: {
@@ -285,6 +287,8 @@ export const FPSGame: React.FC = () => {
   const [maxAmmo] = useState(30);
   const [reloadTime, setReloadTime] = useState(0);
   const lastShotTimeRef = useRef<number>(0);
+  const ammoRef = useRef<number>(30);
+  const reloadTimeRef = useRef<number>(0);
   
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -292,16 +296,74 @@ export const FPSGame: React.FC = () => {
   const inputStateRef = useRef<ReturnType<InputManager['getInputState']> | null>(null);
   const cameraRotationRef = useRef<[number, number, number]>([0, 0, 0]);
   const raycastFnRef = useRef<((origin: THREE.Vector3, direction: THREE.Vector3) => THREE.Intersection | null) | null>(null);
+  
+  // Audio settings state
+  const [masterVolume, setMasterVolume] = useState(() => {
+    const saved = localStorage.getItem('fps-master-volume');
+    return saved ? parseFloat(saved) : 1.0;
+  });
+  const [sfxVolume, setSFXVolume] = useState(() => {
+    const saved = localStorage.getItem('fps-sfx-volume');
+    return saved ? parseFloat(saved) : 1.0;
+  });
+  const [musicVolume, setMusicVolume] = useState(() => {
+    const saved = localStorage.getItem('fps-music-volume');
+    return saved ? parseFloat(saved) : 0.5;
+  });
+  const [isMuted, setIsMuted] = useState(() => {
+    const saved = localStorage.getItem('fps-muted');
+    return saved === 'true';
+  });
 
   // Initialize game systems
   useEffect(() => {
     inputManagerRef.current = new InputManager();
     cameraControllerRef.current = new CameraController();
+    audioManagerRef.current = new AudioManager({
+      masterVolume,
+      sfxVolume,
+      musicVolume,
+      muted: isMuted,
+    });
     
     return () => {
       inputManagerRef.current?.cleanup();
+      audioManagerRef.current?.cleanup();
     };
   }, []);
+  
+  // Update audio settings when they change
+  useEffect(() => {
+    if (audioManagerRef.current) {
+      audioManagerRef.current.setMasterVolume(masterVolume);
+      localStorage.setItem('fps-master-volume', masterVolume.toString());
+    }
+  }, [masterVolume]);
+  
+  useEffect(() => {
+    if (audioManagerRef.current) {
+      audioManagerRef.current.setSFXVolume(sfxVolume);
+      localStorage.setItem('fps-sfx-volume', sfxVolume.toString());
+    }
+  }, [sfxVolume]);
+  
+  useEffect(() => {
+    if (audioManagerRef.current) {
+      audioManagerRef.current.setMusicVolume(musicVolume);
+      localStorage.setItem('fps-music-volume', musicVolume.toString());
+    }
+  }, [musicVolume]);
+  
+  useEffect(() => {
+    if (audioManagerRef.current) {
+      if (isMuted) {
+        audioManagerRef.current.mute();
+      } else {
+        audioManagerRef.current.unmute();
+      }
+      localStorage.setItem('fps-muted', isMuted.toString());
+    }
+  }, [isMuted]);
 
   // Game loop
   useEffect(() => {
@@ -330,7 +392,7 @@ export const FPSGame: React.FC = () => {
       const currentTime = performance.now();
       const fireRate = 1000 / GAME_CONFIG.WEAPON_FIRE_RATE; // ms between shots
       
-      if (input.shoot && ammo > 0 && currentTime - lastShotTimeRef.current >= fireRate && reloadTime === 0) {
+      if (input.shoot && ammoRef.current > 0 && currentTime - lastShotTimeRef.current >= fireRate && reloadTimeRef.current === 0) {
         // Perform raycast (hitscan)
         const forward = cameraControllerRef.current!.getForwardDirection();
         const origin = new THREE.Vector3(
@@ -349,29 +411,48 @@ export const FPSGame: React.FC = () => {
           }
         }
         
+        // Play shooting sound
+        audioManagerRef.current?.playSound(SOUNDS.SHOOT);
+        
         // Decrement ammo
-        setAmmo(prev => prev - 1);
+        setAmmo(prev => {
+          const newAmmo = prev - 1;
+          ammoRef.current = newAmmo;
+          return newAmmo;
+        });
         lastShotTimeRef.current = currentTime;
         
         // Only add score if we actually hit something
         if (hit) {
+          // Play hit sound
+          audioManagerRef.current?.playSound(SOUNDS.HIT);
           setGameState(prev => ({
             ...prev,
             score: prev.score + 10,
           }));
         }
+      } else if (input.shoot && ammoRef.current === 0 && currentTime - lastShotTimeRef.current >= fireRate) {
+        // Play empty clip sound when trying to shoot with no ammo
+        audioManagerRef.current?.playSound(SOUNDS.EMPTY);
+        lastShotTimeRef.current = currentTime;
       }
       
       // Handle reload
-      if (input.reload && ammo < maxAmmo && reloadTime === 0) {
+      if (input.reload && ammoRef.current < maxAmmo && reloadTimeRef.current === 0) {
         setReloadTime(2000); // 2 second reload
+        reloadTimeRef.current = 2000;
+        // Play reload sound
+        audioManagerRef.current?.playSound(SOUNDS.RELOAD);
       }
       
       // Update reload timer
-      if (reloadTime > 0) {
-        setReloadTime(prev => Math.max(0, prev - deltaTime * 1000));
-        if (reloadTime <= deltaTime * 1000) {
+      if (reloadTimeRef.current > 0) {
+        const newReloadTime = Math.max(0, reloadTimeRef.current - deltaTime * 1000);
+        setReloadTime(newReloadTime);
+        reloadTimeRef.current = newReloadTime;
+        if (reloadTimeRef.current <= deltaTime * 1000) {
           setAmmo(maxAmmo);
+          ammoRef.current = maxAmmo;
         }
       }
       
@@ -457,23 +538,36 @@ export const FPSGame: React.FC = () => {
     });
     setAmmo(maxAmmo);
     setReloadTime(0);
+    ammoRef.current = maxAmmo;
+    reloadTimeRef.current = 0;
     playerPositionRef.current = [0, 2, 0];
     lastShotTimeRef.current = 0;
     if (cameraControllerRef.current) {
       cameraControllerRef.current.reset();
     }
+    // Start ambient music
+    audioManagerRef.current?.startAmbient();
   };
 
   const pauseGame = () => {
-    setIsPaused(!isPaused);
-    if (isPaused && inputManagerRef.current && canvasRef.current) {
-      inputManagerRef.current.requestPointerLock(canvasRef.current);
-    } else if (!isPaused) {
+    const newPaused = !isPaused;
+    setIsPaused(newPaused);
+    
+    // Pause/resume ambient music
+    if (newPaused) {
+      audioManagerRef.current?.stopAmbient();
       inputManagerRef.current?.exitPointerLock();
+    } else {
+      audioManagerRef.current?.startAmbient();
+      if (inputManagerRef.current && canvasRef.current) {
+        inputManagerRef.current.requestPointerLock(canvasRef.current);
+      }
     }
   };
 
   const handleGameOver = async () => {
+    // Stop ambient music
+    audioManagerRef.current?.stopAmbient();
     if (user && gameState.score > 0) {
       try {
         await fpsApi.submitScore(
@@ -512,6 +606,54 @@ export const FPSGame: React.FC = () => {
               <li><strong>Shift</strong> - Sprint</li>
               <li><strong>ESC</strong> - Pause/Unpause</li>
           </ul>
+        </div>
+        <div className="fps-audio-settings">
+          <h3>Audio Settings</h3>
+          <div className="fps-volume-control">
+            <label>
+              <span>Master Volume: {Math.round(masterVolume * 100)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={masterVolume}
+                onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
+              />
+            </label>
+          </div>
+          <div className="fps-volume-control">
+            <label>
+              <span>SFX Volume: {Math.round(sfxVolume * 100)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={sfxVolume}
+                onChange={(e) => setSFXVolume(parseFloat(e.target.value))}
+              />
+            </label>
+          </div>
+          <div className="fps-volume-control">
+            <label>
+              <span>Music Volume: {Math.round(musicVolume * 100)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicVolume}
+                onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+              />
+            </label>
+          </div>
+          <button
+            className="fps-mute-button"
+            onClick={() => setIsMuted(!isMuted)}
+          >
+            {isMuted ? '🔇 Unmute' : '🔊 Mute'}
+          </button>
         </div>
       </div>
       ) : (
@@ -576,8 +718,58 @@ export const FPSGame: React.FC = () => {
             {isPaused && (
               <div className="fps-pause-overlay">
                 <h2>PAUSED</h2>
-                <button onClick={pauseGame}>Resume</button>
-                <button onClick={handleGameOver}>Quit</button>
+                <div className="fps-pause-buttons">
+                  <button onClick={pauseGame}>Resume</button>
+                  <button onClick={handleGameOver}>Quit</button>
+                </div>
+                <div className="fps-audio-settings-pause">
+                  <h3>Audio Settings</h3>
+                  <div className="fps-volume-control">
+                    <label>
+                      <span>Master: {Math.round(masterVolume * 100)}%</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={masterVolume}
+                        onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
+                      />
+                    </label>
+                  </div>
+                  <div className="fps-volume-control">
+                    <label>
+                      <span>SFX: {Math.round(sfxVolume * 100)}%</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={sfxVolume}
+                        onChange={(e) => setSFXVolume(parseFloat(e.target.value))}
+                      />
+                    </label>
+                  </div>
+                  <div className="fps-volume-control">
+                    <label>
+                      <span>Music: {Math.round(musicVolume * 100)}%</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={musicVolume}
+                        onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                      />
+                    </label>
+                  </div>
+                  <button
+                    className="fps-mute-button"
+                    onClick={() => setIsMuted(!isMuted)}
+                  >
+                    {isMuted ? '🔇 Unmute' : '🔊 Mute'}
+                  </button>
+                </div>
               </div>
             )}
           </div>

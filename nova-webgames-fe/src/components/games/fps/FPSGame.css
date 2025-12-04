@@ -59,6 +59,94 @@
   padding: 0.5rem 0;
 }
 
+.fps-audio-settings {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.fps-audio-settings h3 {
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.fps-volume-control {
+  margin: 1rem 0;
+}
+
+.fps-volume-control label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.fps-volume-control span {
+  display: block;
+  min-width: 150px;
+}
+
+.fps-volume-control input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.fps-volume-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4ade80;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fps-volume-control input[type="range"]::-webkit-slider-thumb:hover {
+  background: #22c55e;
+}
+
+.fps-volume-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4ade80;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.fps-volume-control input[type="range"]::-moz-range-thumb:hover {
+  background: #22c55e;
+}
+
+.fps-mute-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fps-mute-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 .fps-canvas-container {
   width: 100%;
   height: 100vh;
@@ -114,9 +202,14 @@
   margin-bottom: 2rem;
 }
 
+.fps-pause-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
 .fps-pause-overlay button {
   padding: 0.75rem 1.5rem;
-  margin: 0.5rem;
   font-size: 1rem;
   background: #3b82f6;
   color: white;
@@ -128,6 +221,21 @@
 
 .fps-pause-overlay button:hover {
   background: #2563eb;
+}
+
+.fps-audio-settings-pause {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.fps-audio-settings-pause h3 {
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
 }
 
 .fps-hud-bottom {

@@ -296,5 +296,191 @@ test.describe('FPS Game Playthrough', () => {
     const ammoValue = parseInt(ammoText?.match(/\d+/)?.at(0) || '30');
     expect(ammoValue).toBeLessThan(30);
   });
+
+  test.describe('Audio System', () => {
+    test('should display volume controls in game menu', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Wait for game menu to load
+      await expect(page.locator('h1:has-text("FPS Arena")')).toBeVisible({ timeout: 5000 });
+
+      // Verify audio settings section is visible
+      await expect(page.locator('h3:has-text("Audio Settings")')).toBeVisible();
+
+      // Verify volume sliders are present
+      await expect(page.locator('text=/Master Volume:/')).toBeVisible();
+      await expect(page.locator('text=/SFX Volume:/')).toBeVisible();
+      await expect(page.locator('text=/Music Volume:/')).toBeVisible();
+
+      // Verify sliders are present
+      const sliders = page.locator('.fps-audio-settings input[type="range"]');
+      await expect(sliders).toHaveCount(3);
+
+      // Verify mute button is present
+      await expect(page.locator('button:has-text("Mute"), button:has-text("Unmute")')).toBeVisible();
+    });
+
+    test('should allow adjusting volume sliders in game menu', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Wait for game menu
+      await expect(page.locator('h1:has-text("FPS Arena")')).toBeVisible({ timeout: 5000 });
+
+      // Find master volume slider
+      const masterSlider = page.locator('.fps-audio-settings input[type="range"]').first();
+      await expect(masterSlider).toBeVisible();
+
+      // Get initial value
+      const initialValue = await masterSlider.getAttribute('value');
+      expect(initialValue).toBeTruthy();
+
+      // Change slider value
+      await masterSlider.fill('0.5');
+      await page.waitForTimeout(100);
+
+      // Verify value changed
+      const newValue = await masterSlider.getAttribute('value');
+      expect(parseFloat(newValue || '0')).toBeCloseTo(0.5, 1);
+
+      // Verify percentage display updated
+      await expect(page.locator('text=/Master Volume: 50%/')).toBeVisible();
+    });
+
+    test('should toggle mute button in game menu', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Wait for game menu
+      await expect(page.locator('h1:has-text("FPS Arena")')).toBeVisible({ timeout: 5000 });
+
+      // Find mute button
+      const muteButton = page.locator('.fps-mute-button');
+      await expect(muteButton).toBeVisible();
+
+      // Get initial state
+      const initialText = await muteButton.textContent();
+      expect(initialText).toMatch(/Mute|Unmute/);
+
+      // Click mute button
+      await muteButton.click();
+      await page.waitForTimeout(200);
+
+      // Verify button text changed
+      const newText = await muteButton.textContent();
+      expect(newText).not.toBe(initialText);
+      expect(newText).toMatch(/Mute|Unmute/);
+    });
+
+    test('should display volume controls in pause overlay', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Start the game
+      await page.click('button:has-text("Start Game")');
+      await page.waitForTimeout(500);
+
+      // Verify game is running
+      const canvas = page.locator('.fps-canvas-container');
+      await expect(canvas).toBeVisible({ timeout: 2000 });
+
+      // Pause the game
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+
+      // Verify pause overlay is visible
+      await expect(page.locator('h2:has-text("PAUSED")')).toBeVisible({ timeout: 2000 });
+
+      // Verify audio settings in pause overlay
+      await expect(page.locator('.fps-audio-settings-pause h3:has-text("Audio Settings")')).toBeVisible();
+      await expect(page.locator('.fps-audio-settings-pause').locator('text=/Master:/')).toBeVisible();
+      await expect(page.locator('.fps-audio-settings-pause').locator('text=/SFX:/')).toBeVisible();
+      await expect(page.locator('.fps-audio-settings-pause').locator('text=/Music:/')).toBeVisible();
+      await expect(page.locator('.fps-audio-settings-pause .fps-mute-button')).toBeVisible();
+    });
+
+    test('should persist volume settings to localStorage', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Wait for game menu
+      await expect(page.locator('h1:has-text("FPS Arena")')).toBeVisible({ timeout: 5000 });
+
+      // Set master volume to 0.75
+      const masterSlider = page.locator('.fps-audio-settings input[type="range"]').first();
+      await masterSlider.fill('0.75');
+      await page.waitForTimeout(200);
+
+      // Check localStorage
+      const masterVolume = await page.evaluate(() => localStorage.getItem('fps-master-volume'));
+      expect(masterVolume).toBe('0.75');
+
+      // Set SFX volume to 0.6
+      const sfxSlider = page.locator('.fps-audio-settings input[type="range"]').nth(1);
+      await sfxSlider.fill('0.6');
+      await page.waitForTimeout(200);
+
+      const sfxVolume = await page.evaluate(() => localStorage.getItem('fps-sfx-volume'));
+      expect(sfxVolume).toBe('0.6');
+
+      // Toggle mute
+      const muteButton = page.locator('.fps-mute-button');
+      await muteButton.click();
+      await page.waitForTimeout(200);
+
+      const muted = await page.evaluate(() => localStorage.getItem('fps-muted'));
+      expect(muted).toBe('true');
+    });
+
+    test('should load volume settings from localStorage on page load', async ({ authenticatedUser, page }) => {
+      // Set localStorage values before navigating
+      await page.goto('/games/fps');
+      await page.waitForTimeout(500);
+      
+      await page.evaluate(() => {
+        localStorage.setItem('fps-master-volume', '0.8');
+        localStorage.setItem('fps-sfx-volume', '0.7');
+        localStorage.setItem('fps-music-volume', '0.4');
+        localStorage.setItem('fps-muted', 'true');
+      });
+
+      // Reload page and wait for it to fully load
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+
+      // Wait for game menu
+      await expect(page.locator('h1:has-text("FPS Arena")')).toBeVisible({ timeout: 10000 });
+
+      // Wait a bit more for React to render with localStorage values
+      await page.waitForTimeout(500);
+
+      // Verify sliders have correct values
+      const masterSlider = page.locator('.fps-audio-settings input[type="range"]').first();
+      await expect(masterSlider).toBeVisible({ timeout: 5000 });
+      const masterValue = await masterSlider.getAttribute('value');
+      expect(parseFloat(masterValue || '0')).toBeCloseTo(0.8, 1);
+
+      // Verify mute button shows correct state
+      const muteButton = page.locator('.fps-mute-button');
+      await expect(muteButton).toBeVisible({ timeout: 5000 });
+      const muteText = await muteButton.textContent();
+      expect(muteText).toContain('Unmute'); // Should show Unmute when muted
+    });
+
+    test('should initialize AudioManager when game starts', async ({ authenticatedUser, page }) => {
+      await page.goto('/games/fps');
+
+      // Check that Howler is available (AudioManager uses it)
+      const hasHowler = await page.evaluate(() => {
+        return typeof (window as any).Howler !== 'undefined';
+      });
+      expect(hasHowler).toBe(true);
+
+      // Start the game
+      await page.click('button:has-text("Start Game")');
+      await page.waitForTimeout(1000);
+
+      // AudioManager should be initialized (no errors in console)
+      // We can't directly test AudioManager, but we can verify the game runs without errors
+      const canvas = page.locator('.fps-canvas-container');
+      await expect(canvas).toBeVisible({ timeout: 2000 });
+    });
+  });
 });
 
