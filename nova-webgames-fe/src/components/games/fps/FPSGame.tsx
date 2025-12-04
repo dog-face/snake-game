@@ -8,6 +8,7 @@ import { fpsApi } from '../../../services/games/fps/api';
 import { GameLoop } from '../../../utils/games/fps/gameLoop';
 import { InputManager } from '../../../utils/games/fps/inputManager';
 import { CameraController } from '../../../utils/games/fps/cameraController';
+import { AudioManager, SOUNDS } from '../../../utils/games/fps/audioManager';
 import { GAME_CONFIG } from '../../../utils/games/fps/constants';
 import type { FPSGameState } from '../../../types/games/fps';
 import './FPSGame.css';
@@ -266,6 +267,7 @@ export const FPSGame: React.FC = () => {
   const gameLoopRef = useRef<GameLoop | null>(null);
   const inputManagerRef = useRef<InputManager | null>(null);
   const cameraControllerRef = useRef<CameraController | null>(null);
+  const audioManagerRef = useRef<AudioManager | null>(null);
   
   const [gameState, setGameState] = useState<FPSGameState>({
     player: {
@@ -285,6 +287,8 @@ export const FPSGame: React.FC = () => {
   const [maxAmmo] = useState(30);
   const [reloadTime, setReloadTime] = useState(0);
   const lastShotTimeRef = useRef<number>(0);
+  const ammoRef = useRef<number>(30);
+  const reloadTimeRef = useRef<number>(0);
   
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -297,9 +301,11 @@ export const FPSGame: React.FC = () => {
   useEffect(() => {
     inputManagerRef.current = new InputManager();
     cameraControllerRef.current = new CameraController();
+    audioManagerRef.current = new AudioManager();
     
     return () => {
       inputManagerRef.current?.cleanup();
+      audioManagerRef.current?.cleanup();
     };
   }, []);
 
@@ -330,7 +336,7 @@ export const FPSGame: React.FC = () => {
       const currentTime = performance.now();
       const fireRate = 1000 / GAME_CONFIG.WEAPON_FIRE_RATE; // ms between shots
       
-      if (input.shoot && ammo > 0 && currentTime - lastShotTimeRef.current >= fireRate && reloadTime === 0) {
+      if (input.shoot && ammoRef.current > 0 && currentTime - lastShotTimeRef.current >= fireRate && reloadTimeRef.current === 0) {
         // Perform raycast (hitscan)
         const forward = cameraControllerRef.current!.getForwardDirection();
         const origin = new THREE.Vector3(
@@ -349,29 +355,48 @@ export const FPSGame: React.FC = () => {
           }
         }
         
+        // Play shooting sound
+        audioManagerRef.current?.playSound(SOUNDS.SHOOT);
+        
         // Decrement ammo
-        setAmmo(prev => prev - 1);
+        setAmmo(prev => {
+          const newAmmo = prev - 1;
+          ammoRef.current = newAmmo;
+          return newAmmo;
+        });
         lastShotTimeRef.current = currentTime;
         
         // Only add score if we actually hit something
         if (hit) {
+          // Play hit sound
+          audioManagerRef.current?.playSound(SOUNDS.HIT);
           setGameState(prev => ({
             ...prev,
             score: prev.score + 10,
           }));
         }
+      } else if (input.shoot && ammoRef.current === 0 && currentTime - lastShotTimeRef.current >= fireRate) {
+        // Play empty clip sound when trying to shoot with no ammo
+        audioManagerRef.current?.playSound(SOUNDS.EMPTY);
+        lastShotTimeRef.current = currentTime;
       }
       
       // Handle reload
-      if (input.reload && ammo < maxAmmo && reloadTime === 0) {
+      if (input.reload && ammoRef.current < maxAmmo && reloadTimeRef.current === 0) {
         setReloadTime(2000); // 2 second reload
+        reloadTimeRef.current = 2000;
+        // Play reload sound
+        audioManagerRef.current?.playSound(SOUNDS.RELOAD);
       }
       
       // Update reload timer
-      if (reloadTime > 0) {
-        setReloadTime(prev => Math.max(0, prev - deltaTime * 1000));
-        if (reloadTime <= deltaTime * 1000) {
+      if (reloadTimeRef.current > 0) {
+        const newReloadTime = Math.max(0, reloadTimeRef.current - deltaTime * 1000);
+        setReloadTime(newReloadTime);
+        reloadTimeRef.current = newReloadTime;
+        if (reloadTimeRef.current <= deltaTime * 1000) {
           setAmmo(maxAmmo);
+          ammoRef.current = maxAmmo;
         }
       }
       
@@ -457,23 +482,36 @@ export const FPSGame: React.FC = () => {
     });
     setAmmo(maxAmmo);
     setReloadTime(0);
+    ammoRef.current = maxAmmo;
+    reloadTimeRef.current = 0;
     playerPositionRef.current = [0, 2, 0];
     lastShotTimeRef.current = 0;
     if (cameraControllerRef.current) {
       cameraControllerRef.current.reset();
     }
+    // Start ambient music
+    audioManagerRef.current?.startAmbient();
   };
 
   const pauseGame = () => {
-    setIsPaused(!isPaused);
-    if (isPaused && inputManagerRef.current && canvasRef.current) {
-      inputManagerRef.current.requestPointerLock(canvasRef.current);
-    } else if (!isPaused) {
+    const newPaused = !isPaused;
+    setIsPaused(newPaused);
+    
+    // Pause/resume ambient music
+    if (newPaused) {
+      audioManagerRef.current?.stopAmbient();
       inputManagerRef.current?.exitPointerLock();
+    } else {
+      audioManagerRef.current?.startAmbient();
+      if (inputManagerRef.current && canvasRef.current) {
+        inputManagerRef.current.requestPointerLock(canvasRef.current);
+      }
     }
   };
 
   const handleGameOver = async () => {
+    // Stop ambient music
+    audioManagerRef.current?.stopAmbient();
     if (user && gameState.score > 0) {
       try {
         await fpsApi.submitScore(
