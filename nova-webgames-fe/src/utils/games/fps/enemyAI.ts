@@ -30,7 +30,6 @@ export class EnemyAI {
   public rotation: Vector3;
   public health: number;
   public state: EnemyState;
-  private maxHealth: number;
   private attackCooldown: number = 0;
   private patrolTarget: Vector3 | null = null;
   private lastKnownPlayerPosition: Vector3 | null = null;
@@ -44,7 +43,6 @@ export class EnemyAI {
     this.position = [...position] as Vector3;
     this.rotation = [0, 0, 0] as Vector3;
     this.health = maxHealth;
-    this.maxHealth = maxHealth;
     this.state = EnemyState.IDLE;
     this.patrolTarget = null;
   }
@@ -220,7 +218,7 @@ export class EnemyAI {
   /**
    * Update ATTACK state
    */
-  private updateAttack(context: EnemyUpdateContext, distance: number): void {
+  private updateAttack(_context: EnemyUpdateContext, distance: number): void {
     // Check if player moved out of range
     if (!this.isPlayerInAttackRange(distance)) {
       this.state = EnemyState.CHASE;
@@ -260,7 +258,7 @@ export class EnemyAI {
   /**
    * Get the direction the enemy should move (for physics)
    */
-  getMovementDirection(context: EnemyUpdateContext): Vector3 {
+  getMovementDirection(_context: EnemyUpdateContext): Vector3 {
     if (this.state === EnemyState.DEAD) {
       return [0, 0, 0];
     }

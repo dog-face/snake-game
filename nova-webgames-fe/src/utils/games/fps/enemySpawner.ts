@@ -1,6 +1,5 @@
 // Enemy spawning system
 import { EnemyAI } from './enemyAI';
-import { GAME_CONFIG } from './constants';
 import { vec3, type Vector3 } from './math';
 
 export interface SpawnPoint {
