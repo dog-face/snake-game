@@ -1,15 +1,16 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFPSAudio } from '../useFPSAudio';
 
 // Mock AudioManager
-jest.mock('../../../../utils/games/fps/audioManager', () => ({
-  AudioManager: jest.fn().mockImplementation(() => ({
-    setMasterVolume: jest.fn(),
-    setSFXVolume: jest.fn(),
-    setMusicVolume: jest.fn(),
-    mute: jest.fn(),
-    unmute: jest.fn(),
-    cleanup: jest.fn(),
+vi.mock('../../../../utils/games/fps/audioManager', () => ({
+  AudioManager: vi.fn().mockImplementation(() => ({
+    setMasterVolume: vi.fn(),
+    setSFXVolume: vi.fn(),
+    setMusicVolume: vi.fn(),
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    cleanup: vi.fn(),
   })),
   SOUNDS: {},
 }));
