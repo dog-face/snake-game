@@ -37,6 +37,8 @@ export class InputManager {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('mousemove', this.handleMouseMove);
+    window.addEventListener('mousedown', this.handleMouseDown);
+    window.addEventListener('mouseup', this.handleMouseUp);
     document.addEventListener('pointerlockchange', this.handlePointerLockChange);
   }
   
@@ -60,6 +62,22 @@ export class InputManager {
     }
   };
   
+  private handleMouseDown = (e: MouseEvent): void => {
+    if (e.button === 0) { // Left mouse button
+      this.keys.add('mouse0');
+    } else if (e.button === 2) { // Right mouse button
+      this.keys.add('mouse2');
+    }
+  };
+
+  private handleMouseUp = (e: MouseEvent): void => {
+    if (e.button === 0) {
+      this.keys.delete('mouse0');
+    } else if (e.button === 2) {
+      this.keys.delete('mouse2');
+    }
+  };
+
   private handlePointerLockChange = (): void => {
     this.isPointerLocked = document.pointerLockElement !== null;
     if (!this.isPointerLocked) {
@@ -104,6 +122,8 @@ export class InputManager {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
     window.removeEventListener('mousemove', this.handleMouseMove);
+    window.removeEventListener('mousedown', this.handleMouseDown);
+    window.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
   }
 }

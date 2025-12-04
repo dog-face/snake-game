@@ -170,8 +170,11 @@ See [GAMES.md](GAMES.md) for complete instructions. Quick overview:
 4. Update routing in `nova-webgames-fe/src/App.tsx` if needed
 
 ### Updating Dependencies
-- Backend: Edit `nova-webgames-be/requirements.txt`, then rebuild Docker containers: `make docker-build`
-- Frontend: Edit `nova-webgames-fe/package.json`, then rebuild Docker containers: `make docker-build`
+**When package.json or requirements.txt changes:**
+- **Backend**: Edit `nova-webgames-be/requirements.txt`, then run `make docker-build` to rebuild containers
+- **Frontend**: Edit `nova-webgames-fe/package.json`, then run `make docker-build` to rebuild containers
+- After rebuilding, restart services: `make docker-restart`
+- **Never use `docker-compose exec` to install packages** - always rebuild containers with `make docker-build`
 
 ## Environment Variables
 
@@ -187,6 +190,8 @@ See [GAMES.md](GAMES.md) for complete instructions. Quick overview:
 ## Important Notes
 
 - **Docker-first development** - All services run in Docker containers
+- **Never use `docker-compose exec` directly** - Always use Makefile commands (`make docker-*`)
+- **When dependencies change**: Use `make docker-build` to rebuild containers, never install packages directly in containers
 - **Never commit sensitive data** (API keys, passwords, etc.)
 - **Always run tests** before committing: `make test-all`
 - **Database migrations** should be reviewed before applying
