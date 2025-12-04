@@ -7,6 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Stub React Three libraries for testing
+      '@react-three/fiber': path.resolve(__dirname, './src/test/mocks/react-three-fiber.ts'),
+      '@react-three/cannon': path.resolve(__dirname, './src/test/mocks/react-three-cannon.ts'),
     },
   },
   test: {
