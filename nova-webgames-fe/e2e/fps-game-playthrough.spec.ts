@@ -219,9 +219,17 @@ test.describe('FPS Game Playthrough', () => {
     // Shoot multiple times (aiming at where the test box should be)
     // The test box is positioned at [0, 1, -5] relative to player start at [0, 2, 0]
     // So we need to look forward and shoot
+    // Use mouse.down/up instead of click() to ensure events are properly fired
+    const canvasBox = await canvas.boundingBox();
+    if (!canvasBox) throw new Error('Canvas not found');
+    
     for (let i = 0; i < 5; i++) {
-      await canvas.click({ button: 'left' });
-      await page.waitForTimeout(200); // Wait between shots for fire rate
+      // Click at center of canvas
+      await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+      await page.mouse.down({ button: 'left' });
+      await page.waitForTimeout(50); // Hold button briefly
+      await page.mouse.up({ button: 'left' });
+      await page.waitForTimeout(150); // Wait between shots for fire rate (100ms + buffer)
     }
 
     // Wait for any score updates
@@ -266,7 +274,14 @@ test.describe('FPS Game Playthrough', () => {
     const initialScoreValue = parseInt(initialScore?.match(/\d+/)?.[0] || '0');
 
     // Shoot while looking up (away from target)
-    await canvas.click({ button: 'left' });
+    // Use mouse.down/up instead of click() to ensure events are properly fired
+    const canvasBox = await canvas.boundingBox();
+    if (!canvasBox) throw new Error('Canvas not found');
+    
+    await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+    await page.mouse.down({ button: 'left' });
+    await page.waitForTimeout(50); // Hold button briefly
+    await page.mouse.up({ button: 'left' });
     await page.waitForTimeout(500);
 
     // Score should NOT increase when shooting at empty space
