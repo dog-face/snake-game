@@ -7,3 +7,14 @@ export const Canvas = ({ children }: { children: React.ReactNode }) => {
 
 export const useFrame = () => {};
 
+// Export useThree for @react-three/drei compatibility
+export const useThree = () => ({
+  camera: {},
+  gl: {},
+  scene: {},
+  raycaster: {},
+  size: { width: 800, height: 600 },
+  viewport: { width: 800, height: 600 },
+  pointer: { x: 0, y: 0 },
+});
+
