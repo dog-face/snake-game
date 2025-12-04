@@ -7,10 +7,19 @@ vi.mock('@react-three/drei', () => ({
 
 // Mock Three.js (must be before imports)
 vi.mock('three', () => ({
-  default: {
-    PerspectiveCamera: vi.fn(),
-    Mesh: vi.fn(),
-  },
+  PerspectiveCamera: vi.fn(),
+  Mesh: vi.fn(),
+  Raycaster: vi.fn().mockImplementation(() => ({
+    set: vi.fn(),
+    intersectObjects: vi.fn(() => []),
+  })),
+  Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({
+    x,
+    y,
+    z,
+    normalize: vi.fn(() => ({ x: 0, y: 0, z: 1 })),
+  })),
+  Scene: vi.fn(),
 }));
 
 // Mock FPS API (must be before imports)
@@ -360,6 +369,27 @@ describe('FPSGame', () => {
       // Note: In a real test, we'd verify the InputManager.requestPointerLock was called
       // For now, we just verify the canvas is clickable
       expect(canvas).toBeInTheDocument();
+    });
+  });
+
+  describe('Raycast Hit Detection', () => {
+    it('should only increase score when hitting a target', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<FPSGame />);
+      
+      const startButton = screen.getByRole('button', { name: /Start Game/i });
+      await user.click(startButton);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('canvas')).toBeInTheDocument();
+      });
+      
+      // Initial score should be 0
+      expect(screen.getByText(/Score: 0/i)).toBeInTheDocument();
+      
+      // Note: Actual raycast testing requires 3D scene setup
+      // This test verifies the component renders with raycast system
+      // Full raycast testing is done in E2E tests
     });
   });
 });

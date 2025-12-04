@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { Physics, usePlane, useBox } from '@react-three/cannon';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -35,10 +35,56 @@ function TestBox() {
     args: [2, 2, 2], // 2x2x2 meter box
   }));
   
+  const [isHit, setIsHit] = useState(false);
+  const meshRef = useRef<THREE.Mesh | null>(null);
+  
+  // Handle hit flash effect
+  useEffect(() => {
+    if (isHit) {
+      const timer = setTimeout(() => {
+        setIsHit(false);
+      }, 250); // Flash for 250ms
+      return () => clearTimeout(timer);
+    }
+  }, [isHit]);
+  
+  // Mark mesh as target and set up hit handler
+  useEffect(() => {
+    if (meshRef.current) {
+      (meshRef.current as any).isTarget = true; // Mark as target for raycasting
+      (meshRef.current as any).onHit = () => {
+        setIsHit(true);
+      };
+    }
+  }, []);
+  
+  // Combined ref handler - useBox ref can be callback or ref object
+  const handleRef = useCallback((node: THREE.Mesh | null) => {
+    // Store mesh for raycasting
+    meshRef.current = node;
+    // Pass to useBox ref (cast like Ground component does)
+    if (node && ref) {
+      const boxRef = ref as React.RefObject<THREE.Mesh>;
+      if (boxRef && 'current' in boxRef) {
+        (boxRef as React.MutableRefObject<THREE.Mesh>).current = node;
+      } else if (typeof ref === 'function') {
+        (ref as (node: THREE.Mesh | null) => void)(node);
+      }
+    }
+  }, [ref]);
+  
   return (
-    <mesh ref={ref as React.RefObject<THREE.Mesh>} castShadow receiveShadow>
+    <mesh 
+      ref={handleRef}
+      castShadow 
+      receiveShadow
+    >
       <boxGeometry args={[2, 2, 2]} />
-      <meshStandardMaterial color="#ef4444" /> {/* Red color for visibility */}
+      <meshStandardMaterial 
+        color={isHit ? '#ffffff' : '#ef4444'} 
+        emissive={isHit ? '#ffffff' : '#000000'}
+        emissiveIntensity={isHit ? 0.5 : 0}
+      />
     </mesh>
   );
 }
@@ -155,6 +201,67 @@ function FirstPersonCamera({
   );
 }
 
+// Raycast system component - provides raycast functionality to the game loop
+function RaycastSystem({ 
+  onRaycastReady 
+}: { 
+  onRaycastReady: (raycastFn: (origin: THREE.Vector3, direction: THREE.Vector3) => THREE.Intersection | null) => void;
+}) {
+  let scene: THREE.Scene | null = null;
+  let camera: THREE.Camera | null = null;
+  
+  try {
+    const three = useThree();
+    scene = three.scene;
+    camera = three.camera;
+  } catch (e) {
+    // useThree can only be called inside Canvas - handle test environment
+    // Provide a no-op raycast function for tests
+    useEffect(() => {
+      onRaycastReady(() => null);
+    }, [onRaycastReady]);
+    return null;
+  }
+  
+  const raycaster = useRef(new THREE.Raycaster());
+  
+  useEffect(() => {
+    if (!scene) return;
+    
+    const performRaycast = (origin: THREE.Vector3, direction: THREE.Vector3): THREE.Intersection | null => {
+      if (!scene) return null;
+      
+      raycaster.current.set(origin, direction.normalize());
+      
+      // Get all meshes in the scene that are targets (excluding player and ground)
+      const targets: THREE.Object3D[] = [];
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh && (object as any).isTarget) {
+          targets.push(object);
+        }
+      });
+      
+      const intersections = raycaster.current.intersectObjects(targets, false);
+      
+      if (intersections.length > 0) {
+        // Return the closest intersection
+        const hit = intersections[0];
+        // Trigger hit callback if available
+        if ((hit.object as any).onHit) {
+          (hit.object as any).onHit();
+        }
+        return hit;
+      }
+      
+      return null;
+    };
+    
+    onRaycastReady(performRaycast);
+  }, [scene, onRaycastReady]);
+  
+  return null; // This component doesn't render anything
+}
+
 export const FPSGame: React.FC = () => {
   const { user } = useAuth();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -186,6 +293,7 @@ export const FPSGame: React.FC = () => {
   const playerPositionRef = useRef<[number, number, number]>([0, 2, 0]);
   const inputStateRef = useRef<ReturnType<InputManager['getInputState']> | null>(null);
   const cameraRotationRef = useRef<[number, number, number]>([0, 0, 0]);
+  const raycastFnRef = useRef<((origin: THREE.Vector3, direction: THREE.Vector3) => THREE.Intersection | null) | null>(null);
 
   // Initialize game systems
   useEffect(() => {
@@ -226,24 +334,34 @@ export const FPSGame: React.FC = () => {
       
       if (input.shoot && ammo > 0 && currentTime - lastShotTimeRef.current >= fireRate && reloadTime === 0) {
         // Perform raycast (hitscan)
-        // TODO: Implement actual raycast collision detection
-        // const forward = cameraControllerRef.current!.getForwardDirection();
-        // const origin = [
-        //   playerPositionRef.current[0],
-        //   playerPositionRef.current[1] + GAME_CONFIG.CAMERA_HEIGHT,
-        //   playerPositionRef.current[2],
-        // ] as [number, number, number];
+        const forward = cameraControllerRef.current!.getForwardDirection();
+        const origin = new THREE.Vector3(
+          playerPositionRef.current[0],
+          playerPositionRef.current[1] + GAME_CONFIG.CAMERA_HEIGHT,
+          playerPositionRef.current[2]
+        );
+        const direction = new THREE.Vector3(forward[0], forward[1], forward[2]);
         
-        // Simple shooting - in a real game, this would check for collisions
-        // For now, just decrement ammo and add score
+        // Perform raycast if function is available
+        let hit = false;
+        if (raycastFnRef.current) {
+          const intersection = raycastFnRef.current(origin, direction);
+          if (intersection && intersection.distance <= GAME_CONFIG.WEAPON_RANGE) {
+            hit = true;
+          }
+        }
+        
+        // Decrement ammo
         setAmmo(prev => prev - 1);
         lastShotTimeRef.current = currentTime;
         
-        // Add score for "hitting" something (placeholder)
-        setGameState(prev => ({
-          ...prev,
-          score: prev.score + 10,
-        }));
+        // Only add score if we actually hit something
+        if (hit) {
+          setGameState(prev => ({
+            ...prev,
+            score: prev.score + 10,
+          }));
+        }
       }
       
       // Handle reload
@@ -416,6 +534,11 @@ export const FPSGame: React.FC = () => {
               />
               
               <Physics gravity={[0, GAME_CONFIG.GRAVITY, 0]}>
+                <RaycastSystem 
+                  onRaycastReady={(fn) => {
+                    raycastFnRef.current = fn;
+                  }}
+                />
                 <Ground />
                 <TestBox />
                 <Player 

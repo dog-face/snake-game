@@ -38,10 +38,19 @@ vi.mock('@react-three/drei', () => ({
 
 // Mock Three.js (must be before imports)
 vi.mock('three', () => ({
-  default: {
-    PerspectiveCamera: vi.fn(),
-    Mesh: vi.fn(),
-  },
+  PerspectiveCamera: vi.fn(),
+  Mesh: vi.fn(),
+  Raycaster: vi.fn().mockImplementation(() => ({
+    set: vi.fn(),
+    intersectObjects: vi.fn(() => []),
+  })),
+  Vector3: vi.fn().mockImplementation((x = 0, y = 0, z = 0) => ({
+    x,
+    y,
+    z,
+    normalize: vi.fn(() => ({ x: 0, y: 0, z: 1 })),
+  })),
+  Scene: vi.fn(),
 }));
 
 // Mock FPS API (must be before imports)

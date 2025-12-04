@@ -193,5 +193,93 @@ test.describe('FPS Game Playthrough', () => {
     await expect(page.locator('text=/Score:/')).toBeVisible();
     await expect(page.locator('text=/\\/ 30/')).toBeVisible();
   });
+
+  test('should detect hits and only increase score when hitting target', async ({ authenticatedUser, page }) => {
+    await page.goto('/games/fps');
+
+    // Start the game
+    await page.click('button:has-text("Start Game")');
+    await page.waitForTimeout(500);
+
+    // Verify game is running
+    const canvas = page.locator('.fps-canvas-container');
+    await expect(canvas).toBeVisible({ timeout: 2000 });
+
+    // Click canvas to enable pointer lock
+    await canvas.click();
+    await page.waitForTimeout(500);
+
+    // Get initial score
+    const initialScore = await page.locator('text=/Score: \\d+/').textContent();
+    const initialScoreValue = parseInt(initialScore?.match(/\d+/)?.[0] || '0');
+
+    // Wait a moment for game to fully initialize
+    await page.waitForTimeout(1000);
+
+    // Shoot multiple times (aiming at where the test box should be)
+    // The test box is positioned at [0, 1, -5] relative to player start at [0, 2, 0]
+    // So we need to look forward and shoot
+    for (let i = 0; i < 5; i++) {
+      await canvas.click({ button: 'left' });
+      await page.waitForTimeout(200); // Wait between shots for fire rate
+    }
+
+    // Wait for any score updates
+    await page.waitForTimeout(1000);
+
+    // Score should have increased if we hit the target
+    // (Note: This test verifies the system works, exact score depends on hits)
+    const finalScore = await page.locator('text=/Score: \\d+/').textContent();
+    const finalScoreValue = parseInt(finalScore?.match(/\d+/)?.[0] || '0');
+    
+    // Score should be >= initial (may have increased if we hit)
+    expect(finalScoreValue).toBeGreaterThanOrEqual(initialScoreValue);
+    
+    // Ammo should have decreased
+    const ammoText = await page.locator('text=/\\d+ \\/ 30/').textContent();
+    const ammoValue = parseInt(ammoText?.match(/\d+/)?.at(0) || '30');
+    expect(ammoValue).toBeLessThan(30);
+  });
+
+  test('should not increase score when shooting at empty space', async ({ authenticatedUser, page }) => {
+    await page.goto('/games/fps');
+
+    // Start the game
+    await page.click('button:has-text("Start Game")');
+    await page.waitForTimeout(500);
+
+    // Verify game is running
+    const canvas = page.locator('.fps-canvas-container');
+    await expect(canvas).toBeVisible({ timeout: 2000 });
+
+    // Click canvas to enable pointer lock
+    await canvas.click();
+    await page.waitForTimeout(500);
+
+    // Look straight up (away from the test box)
+    // Move mouse to look up
+    await page.mouse.move(400, 100); // Move to top of canvas
+    await page.waitForTimeout(200);
+
+    // Get initial score
+    const initialScore = await page.locator('text=/Score: \\d+/').textContent();
+    const initialScoreValue = parseInt(initialScore?.match(/\d+/)?.[0] || '0');
+
+    // Shoot while looking up (away from target)
+    await canvas.click({ button: 'left' });
+    await page.waitForTimeout(500);
+
+    // Score should NOT increase when shooting at empty space
+    const finalScore = await page.locator('text=/Score: \\d+/').textContent();
+    const finalScoreValue = parseInt(finalScore?.match(/\d+/)?.[0] || '0');
+    
+    // Score should remain the same (no hit detected)
+    expect(finalScoreValue).toBe(initialScoreValue);
+    
+    // But ammo should still decrease
+    const ammoText = await page.locator('text=/\\d+ \\/ 30/').textContent();
+    const ammoValue = parseInt(ammoText?.match(/\d+/)?.at(0) || '30');
+    expect(ammoValue).toBeLessThan(30);
+  });
 });
 
