@@ -25,5 +25,17 @@ export const GAME_CONFIG = {
   // Game
   MAX_HEALTH: 100,
   MAX_ARMOR: 100,
+  
+  // Enemy
+  ENEMY_HEALTH: 50,
+  ENEMY_SPEED: 3,
+  ENEMY_DAMAGE: 10,
+  ENEMY_DETECTION_RANGE: 15,
+  ENEMY_ATTACK_RANGE: 2,
+  ENEMY_ATTACK_COOLDOWN: 1000, // milliseconds
+  ENEMY_SIZE: [0.6, 1.6, 0.6] as [number, number, number],
+  ENEMY_COLOR: '#ef4444',
+  ENEMY_KILL_SCORE: 50,
+  MAX_ENEMIES: 10,
 } as const;
 

@@ -10,6 +10,8 @@ import { InputManager } from '../../../utils/games/fps/inputManager';
 import { CameraController } from '../../../utils/games/fps/cameraController';
 import { AudioManager, SOUNDS } from '../../../utils/games/fps/audioManager';
 import { GAME_CONFIG } from '../../../utils/games/fps/constants';
+import { EnemyAI, EnemyState } from '../../../utils/games/fps/enemyAI';
+import { EnemySpawner } from '../../../utils/games/fps/enemySpawner';
 import type { FPSGameState } from '../../../types/games/fps';
 import './FPSGame.css';
 
@@ -87,6 +89,172 @@ function TestBox() {
         emissiveIntensity={isHit ? 0.5 : 0}
       />
     </mesh>
+  );
+}
+
+// Enemy component
+function Enemy({
+  enemyData,
+  onHit,
+  onUpdate,
+  movementDirection,
+}: {
+  enemyData: {
+    id: string;
+    position: [number, number, number];
+    rotation: [number, number, number];
+    health: number;
+  };
+  onHit: () => void;
+  onUpdate: (pos: [number, number, number]) => void;
+  movementDirection: [number, number, number];
+}) {
+  const [ref, api] = useBox(() => ({
+    mass: 1,
+    position: enemyData.position,
+    args: GAME_CONFIG.ENEMY_SIZE,
+    type: 'Dynamic',
+    material: {
+      friction: 0.1,
+      restitution: 0,
+    },
+  }));
+
+  const [isHit, setIsHit] = useState(false);
+  const meshRef = useRef<THREE.Mesh | null>(null);
+
+  // Handle hit flash effect
+  useEffect(() => {
+    if (isHit) {
+      const timer = setTimeout(() => {
+        setIsHit(false);
+      }, 250); // Flash for 250ms
+      return () => clearTimeout(timer);
+    }
+  }, [isHit]);
+
+  // Update position from physics
+  useEffect(() => {
+    const unsubscribe = api.position.subscribe((pos) => {
+      onUpdate([pos[0], pos[1], pos[2]]);
+    });
+    return unsubscribe;
+  }, [api, onUpdate]);
+
+  // Apply movement based on AI direction
+  useEffect(() => {
+    const speed = GAME_CONFIG.ENEMY_SPEED;
+    const velocity = [
+      movementDirection[0] * speed,
+      0, // Keep Y at 0 for ground movement
+      movementDirection[2] * speed,
+    ];
+    api.velocity.set(velocity[0], velocity[1], velocity[2]);
+  }, [movementDirection, api]);
+
+  // Mark mesh as target and set up hit handler
+  useEffect(() => {
+    if (meshRef.current) {
+      (meshRef.current as any).isTarget = true; // Mark as target for raycasting
+      (meshRef.current as any).enemyId = enemyData.id; // Store enemy ID
+      (meshRef.current as any).onHit = () => {
+        setIsHit(true);
+        onHit();
+      };
+    }
+  }, [enemyData.id, onHit]);
+
+  // Combined ref handler
+  const handleRef = useCallback((node: THREE.Mesh | null) => {
+    meshRef.current = node;
+    if (node && ref) {
+      const boxRef = ref as React.RefObject<THREE.Mesh>;
+      if (boxRef && 'current' in boxRef) {
+        (boxRef as React.MutableRefObject<THREE.Mesh>).current = node;
+      } else if (typeof ref === 'function') {
+        (ref as (node: THREE.Mesh | null) => void)(node);
+      }
+    }
+  }, [ref]);
+
+  const healthPercent = Math.max(0, enemyData.health / GAME_CONFIG.ENEMY_HEALTH);
+  const isDead = enemyData.health <= 0;
+  const [opacity, setOpacity] = useState(1);
+
+  // Handle death animation
+  useEffect(() => {
+    if (isDead) {
+      // Fade out animation
+      const fadeOut = setInterval(() => {
+        setOpacity(prev => {
+          const newOpacity = prev - 0.05;
+          if (newOpacity <= 0) {
+            clearInterval(fadeOut);
+            return 0;
+          }
+          return newOpacity;
+        });
+      }, 50);
+      return () => clearInterval(fadeOut);
+    }
+  }, [isDead]);
+
+  // Don't render if fully faded out
+  if (isDead && opacity <= 0) {
+    return null;
+  }
+
+  // Color based on health and hit state
+  let color: string = GAME_CONFIG.ENEMY_COLOR;
+  if (isHit) {
+    color = '#ffffff';
+  } else if (healthPercent < 0.3) {
+    color = '#dc2626'; // Darker red when low health
+  } else if (healthPercent < 0.6) {
+    color = '#f59e0b'; // Orange when medium health
+  }
+
+  const healthBarHeight = 0.15;
+  const healthBarWidth = GAME_CONFIG.ENEMY_SIZE[0] * 1.2;
+  const healthBarY = GAME_CONFIG.ENEMY_SIZE[1] / 2 + 0.2;
+
+  return (
+    <group>
+      <mesh 
+        ref={handleRef}
+        castShadow 
+        receiveShadow
+        visible={!isDead || opacity > 0}
+      >
+        <boxGeometry args={GAME_CONFIG.ENEMY_SIZE} />
+        <meshStandardMaterial 
+          color={color}
+          emissive={isHit ? '#ffffff' : '#000000'}
+          emissiveIntensity={isHit ? 0.5 : 0}
+          transparent={isDead}
+          opacity={opacity}
+        />
+      </mesh>
+      {/* Health bar - simple 3D bar above enemy */}
+      {!isDead && (
+        <group position={[0, healthBarY, 0]}>
+          {/* Background bar */}
+          <mesh>
+            <planeGeometry args={[healthBarWidth, healthBarHeight]} />
+            <meshBasicMaterial color="#000000" transparent opacity={0.7} />
+          </mesh>
+          {/* Health fill bar */}
+          <mesh position={[-(healthBarWidth * (1 - healthPercent)) / 2, 0, 0.01]}>
+            <planeGeometry args={[healthBarWidth * healthPercent, healthBarHeight]} />
+            <meshBasicMaterial 
+              color={healthPercent > 0.5 ? '#22c55e' : healthPercent > 0.25 ? '#f59e0b' : '#ef4444'} 
+              transparent 
+              opacity={0.9} 
+            />
+          </mesh>
+        </group>
+      )}
+    </group>
   );
 }
 
@@ -296,6 +464,8 @@ export const FPSGame: React.FC = () => {
   const inputStateRef = useRef<ReturnType<InputManager['getInputState']> | null>(null);
   const cameraRotationRef = useRef<[number, number, number]>([0, 0, 0]);
   const raycastFnRef = useRef<((origin: THREE.Vector3, direction: THREE.Vector3) => THREE.Intersection | null) | null>(null);
+  const enemiesRef = useRef<Map<string, EnemyAI>>(new Map());
+  const enemySpawnerRef = useRef<EnemySpawner | null>(null);
   
   // Audio settings state
   const [masterVolume, setMasterVolume] = useState(() => {
@@ -324,6 +494,9 @@ export const FPSGame: React.FC = () => {
       sfxVolume,
       musicVolume,
       muted: isMuted,
+    });
+    enemySpawnerRef.current = new EnemySpawner({
+      maxEnemies: GAME_CONFIG.MAX_ENEMIES,
     });
     
     return () => {
@@ -404,10 +577,32 @@ export const FPSGame: React.FC = () => {
         
         // Perform raycast if function is available
         let hit = false;
+        let hitEnemyId: string | null = null;
         if (raycastFnRef.current) {
           const intersection = raycastFnRef.current(origin, direction);
           if (intersection && intersection.distance <= GAME_CONFIG.WEAPON_RANGE) {
             hit = true;
+            // Check if we hit an enemy
+            const hitObject = intersection.object as any;
+            const enemyId = hitObject.enemyId;
+            if (enemyId && typeof enemyId === 'string') {
+              hitEnemyId = enemyId;
+              // Apply damage to enemy
+              const enemy = enemiesRef.current.get(enemyId);
+              if (enemy) {
+                enemy.takeDamage(GAME_CONFIG.WEAPON_DAMAGE);
+                // Check if enemy died
+                if (enemy.health <= 0) {
+                  setGameState(prev => ({
+                    ...prev,
+                    kills: prev.kills + 1,
+                    score: prev.score + GAME_CONFIG.ENEMY_KILL_SCORE,
+                  }));
+                  // Play enemy death sound
+                  audioManagerRef.current?.playSound(SOUNDS.ENEMY_DEATH);
+                }
+              }
+            }
           }
         }
         
@@ -422,14 +617,17 @@ export const FPSGame: React.FC = () => {
         });
         lastShotTimeRef.current = currentTime;
         
-        // Only add score if we actually hit something
-        if (hit) {
+        // Only add score if we actually hit something (but not an enemy, that's handled above)
+        if (hit && !hitEnemyId) {
           // Play hit sound
           audioManagerRef.current?.playSound(SOUNDS.HIT);
           setGameState(prev => ({
             ...prev,
             score: prev.score + 10,
           }));
+        } else if (hitEnemyId) {
+          // Play hit sound for enemy hit
+          audioManagerRef.current?.playSound(SOUNDS.HIT);
         }
       } else if (input.shoot && ammoRef.current === 0 && currentTime - lastShotTimeRef.current >= fireRate) {
         // Play empty clip sound when trying to shoot with no ammo
@@ -456,7 +654,43 @@ export const FPSGame: React.FC = () => {
         }
       }
       
-      // Update game state based on input
+      // Update enemies
+      const playerPos: [number, number, number] = playerPositionRef.current;
+      enemiesRef.current.forEach((enemy) => {
+        if (enemy.state !== EnemyState.DEAD) {
+          // Create raycast wrapper for enemy AI
+          const raycastWrapper = raycastFnRef.current
+            ? (origin: [number, number, number], direction: [number, number, number]) => {
+                const originVec = new THREE.Vector3(origin[0], origin[1], origin[2]);
+                const directionVec = new THREE.Vector3(direction[0], direction[1], direction[2]);
+                const result = raycastFnRef.current!(originVec, directionVec);
+                return result ? { distance: result.distance } : null;
+              }
+            : undefined;
+
+          enemy.update({
+            playerPosition: playerPos,
+            deltaTime,
+            raycast: raycastWrapper,
+          });
+
+          // Handle enemy attacks
+          if (enemy.canAttack()) {
+            const damage = enemy.getAttackDamage();
+            setGameState(prev => ({
+              ...prev,
+              player: {
+                ...prev.player,
+                health: Math.max(0, prev.player.health - damage),
+              },
+            }));
+            // Play enemy attack sound
+            audioManagerRef.current?.playSound(SOUNDS.ENEMY_ATTACK);
+          }
+        }
+      });
+
+      // Update game state with enemy data
       setGameState(prev => ({
         ...prev,
         player: {
@@ -464,6 +698,9 @@ export const FPSGame: React.FC = () => {
           position: playerPositionRef.current,
           rotation: cameraRotationRef.current,
         },
+        enemies: Array.from(enemiesRef.current.values())
+          .filter(e => e.state !== EnemyState.DEAD)
+          .map(e => e.getData()),
       }));
     };
 
@@ -523,14 +760,28 @@ export const FPSGame: React.FC = () => {
   const startGame = () => {
     setIsGameStarted(true);
     setIsPaused(false);
+    
+    // Clear existing enemies
+    enemiesRef.current.clear();
+    
+    // Spawn initial enemies using spawner
+    const playerStartPosition: [number, number, number] = [0, 2, 0];
+    const initialEnemies = enemySpawnerRef.current?.spawnInitialEnemies(playerStartPosition) || [];
+    
+    initialEnemies.forEach(enemy => {
+      enemiesRef.current.set(enemy.id, enemy);
+      // Play spawn sound for each enemy
+      audioManagerRef.current?.playSound(SOUNDS.ENEMY_SPAWN, { volume: 0.3 });
+    });
+    
     setGameState({
       player: {
-        position: [0, 2, 0],
+        position: playerStartPosition,
         rotation: [0, 0, 0],
         health: GAME_CONFIG.MAX_HEALTH,
         armor: 0,
       },
-      enemies: [],
+      enemies: initialEnemies.map(e => e.getData()),
       projectiles: [],
       score: 0,
       kills: 0,
@@ -540,7 +791,7 @@ export const FPSGame: React.FC = () => {
     setReloadTime(0);
     ammoRef.current = maxAmmo;
     reloadTimeRef.current = 0;
-    playerPositionRef.current = [0, 2, 0];
+    playerPositionRef.current = playerStartPosition;
     lastShotTimeRef.current = 0;
     if (cameraControllerRef.current) {
       cameraControllerRef.current.reset();
@@ -586,6 +837,18 @@ export const FPSGame: React.FC = () => {
 
   const updatePlayerPosition = useCallback((pos: [number, number, number]) => {
     playerPositionRef.current = pos;
+  }, []);
+
+  const handleEnemyHit = useCallback(() => {
+    // Hit callback is handled in shooting logic
+    // This is just for visual feedback
+  }, []);
+
+  const handleEnemyPositionUpdate = useCallback((enemyId: string, pos: [number, number, number]) => {
+    const enemy = enemiesRef.current.get(enemyId);
+    if (enemy) {
+      enemy.position = pos;
+    }
   }, []);
 
   return (
@@ -681,6 +944,24 @@ export const FPSGame: React.FC = () => {
                 />
                 <Ground />
                 <TestBox />
+                {gameState.enemies.map((enemy) => {
+                  const enemyAI = enemiesRef.current.get(enemy.id);
+                  const movementDir = enemyAI
+                    ? enemyAI.getMovementDirection({
+                        playerPosition: playerPositionRef.current,
+                        deltaTime: 0.016, // Approximate frame time
+                      })
+                    : [0, 0, 0];
+                  return (
+                    <Enemy
+                      key={enemy.id}
+                      enemyData={enemy}
+                      onHit={() => handleEnemyHit()}
+                      onUpdate={(pos) => handleEnemyPositionUpdate(enemy.id, pos)}
+                      movementDirection={movementDir as [number, number, number]}
+                    />
+                  );
+                })}
                 <Player 
                   position={playerPositionRef.current}
                   onUpdate={updatePlayerPosition}

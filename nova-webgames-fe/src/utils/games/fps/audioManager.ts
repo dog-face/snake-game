@@ -21,6 +21,10 @@ export const SOUNDS = {
   RELOAD: 'reload',
   EMPTY: 'empty',
   AMBIENT: 'ambient',
+  // Enemy sounds
+  ENEMY_SPAWN: 'enemy_spawn',
+  ENEMY_ATTACK: 'enemy_attack',
+  ENEMY_DEATH: 'enemy_death',
 } as const;
 
 export type SoundName = typeof SOUNDS[keyof typeof SOUNDS];
@@ -87,6 +91,30 @@ export class AudioManager {
       loop: true,
       preload: true,
     });
+
+    // Enemy spawn sound - reuse hit sound with lower pitch for now
+    // TODO: Add dedicated enemy_spawn.wav file
+    this.sounds.set(SOUNDS.ENEMY_SPAWN, new Howl({
+      src: [`${soundsBasePath}/hit.wav`],
+      volume: this.sfxVolume * 0.5,
+      preload: true,
+    }));
+
+    // Enemy attack sound - reuse shoot sound with variation for now
+    // TODO: Add dedicated enemy_attack.wav file
+    this.sounds.set(SOUNDS.ENEMY_ATTACK, new Howl({
+      src: [`${soundsBasePath}/shoot.wav`],
+      volume: this.sfxVolume * 0.7,
+      preload: true,
+    }));
+
+    // Enemy death sound - reuse hit sound for now
+    // TODO: Add dedicated enemy_death.wav file
+    this.sounds.set(SOUNDS.ENEMY_DEATH, new Howl({
+      src: [`${soundsBasePath}/hit.wav`],
+      volume: this.sfxVolume * 0.8,
+      preload: true,
+    }));
   }
 
 
